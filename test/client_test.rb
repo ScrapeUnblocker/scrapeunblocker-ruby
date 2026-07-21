@@ -67,6 +67,17 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "pages_to_check=2"
   end
 
+  def test_google_local_targets_maps_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    out = client.google_local("coffee shops in chicago", proxy_country: "US", gl: "us")
+
+    assert_equal({ "results" => [] }, out)
+    assert_includes @urls[0], "/maps/google-local"
+    assert_includes @urls[0], "keyword=coffee"
+    assert_includes @urls[0], "proxy_country=US"
+    assert_includes @urls[0], "gl=us"
+  end
+
   def test_get_image_returns_bytes
     client = make_client([{ status: 200, body: "\x89PNG" }])
     assert_equal "\x89PNG", client.get_image("https://example.com/x.png")

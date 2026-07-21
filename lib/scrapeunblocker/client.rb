@@ -70,6 +70,16 @@ module ScrapeUnblocker
                 captcha_pause: (captcha_pause.zero? ? nil : captcha_pause))
     end
 
+    # Search Google Local (Maps) and return the businesses as a Hash.
+    #
+    # Returns up to ~20 businesses, each with name, rating, reviews, price,
+    # category, address, hours and a top review snippet. Local results are
+    # location-sensitive, so set +proxy_country+ (and optionally +gl+).
+    def google_local(keyword, proxy_country: nil, hl: nil, gl: nil)
+      post_json("/maps/google-local",
+                keyword: keyword, proxy_country: proxy_country, hl: hl, gl: gl)
+    end
+
     # Fetch an image URL through the bypass chain and return its raw bytes.
     def get_image(url, proxy_country: nil)
       request("/getImage", url: url, proxy_country: proxy_country)[:body]

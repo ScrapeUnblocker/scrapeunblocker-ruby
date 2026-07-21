@@ -80,6 +80,13 @@ fresh = su.get_parsed(url, refresh_rules: true, rules_hint: "price is missing")
 serp = su.serp("web scraping api", pages_to_check: 2, proxy_country: "US")
 ```
 
+## Google Local (Maps)
+
+```ruby
+local = su.google_local("coffee shops in chicago", proxy_country: "US", gl: "us")
+local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['address']}" }
+```
+
 ## Cookies and the serving proxy
 
 ```ruby

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.1.1
+
+- Added `google_local(keyword, ...)` for the new Google Local (Maps) plugin (`POST /maps/google-local`) - returns local business listings (name, rating, reviews, price, category, address, hours) as a Hash.
+
 ## 0.1.0
 
 Initial release.
