@@ -80,6 +80,19 @@ module ScrapeUnblocker
                 keyword: keyword, proxy_country: proxy_country, hl: hl, gl: gl)
     end
 
+    # Search Oopbuy (1688, Taobao or official channel) and return the goods as a Hash.
+    #
+    # Returns matched products, each with spu, channel, title, titleCn, price,
+    # originalPrice, priceCny, monthSold, image and url. +channel+ is one of
+    # "1688" (default), "taobao" or "official"; +sort+ is one of "default",
+    # "price_asc", "price_desc" or "best_selling". +page_size+ max is 60.
+    # Brand keywords return HTTP 422.
+    def oopbuy_search(keyword, channel: "1688", page: 1, page_size: 20, sort: "default", proxy_country: nil)
+      post_json("/goods/oopbuy-search",
+                keyword: keyword, channel: channel, page: page,
+                page_size: page_size, sort: sort, proxy_country: proxy_country)
+    end
+
     # Fetch an image URL through the bypass chain and return its raw bytes.
     def get_image(url, proxy_country: nil)
       request("/getImage", url: url, proxy_country: proxy_country)[:body]

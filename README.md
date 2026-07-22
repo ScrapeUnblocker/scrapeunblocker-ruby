@@ -87,6 +87,15 @@ local = su.google_local("coffee shops in chicago", proxy_country: "US", gl: "us"
 local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['address']}" }
 ```
 
+## Oopbuy goods search
+
+```ruby
+goods = su.oopbuy_search("running shoes", channel: "1688", page: 1, page_size: 20, sort: "default")
+goods["results"].each { |item| puts "#{item['title']} #{item['price']} #{item['url']}" }
+```
+
+`channel` is one of `"1688"` (default), `"taobao"` or `"official"`. `sort` is one of `"default"`, `"price_asc"`, `"price_desc"` or `"best_selling"`. `page_size` max is 60. Brand keywords return HTTP 422.
+
 ## Cookies and the serving proxy
 
 ```ruby

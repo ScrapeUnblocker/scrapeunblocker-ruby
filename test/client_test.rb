@@ -78,6 +78,20 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "gl=us"
   end
 
+  def test_oopbuy_search_targets_goods_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    out = client.oopbuy_search("running shoes", channel: "taobao", proxy_country: "US")
+
+    assert_equal({ "results" => [] }, out)
+    assert_includes @urls[0], "/goods/oopbuy-search"
+    assert_includes @urls[0], "keyword=running"
+    assert_includes @urls[0], "channel=taobao"
+    assert_includes @urls[0], "page=1"
+    assert_includes @urls[0], "page_size=20"
+    assert_includes @urls[0], "sort=default"
+    assert_includes @urls[0], "proxy_country=US"
+  end
+
   def test_get_image_returns_bytes
     client = make_client([{ status: 200, body: "\x89PNG" }])
     assert_equal "\x89PNG", client.get_image("https://example.com/x.png")
