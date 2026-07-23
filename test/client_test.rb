@@ -109,13 +109,57 @@ class ClientTest < Minitest::Test
   def test_error_mapping
     {
       400 => ScrapeUnblocker::InvalidRequestError,
+      401 => ScrapeUnblocker::AuthenticationError,
+      402 => ScrapeUnblocker::PaymentRequiredError,
       403 => ScrapeUnblocker::BlockedError,
+      404 => ScrapeUnblocker::NotFoundError,
+      408 => ScrapeUnblocker::BrowserTimeoutError,
+      415 => ScrapeUnblocker::UnsupportedContentError,
+      422 => ScrapeUnblocker::ValidationError,
       429 => ScrapeUnblocker::RateLimitError,
-      503 => ScrapeUnblocker::UpstreamOutageError
+      503 => ScrapeUnblocker::UpstreamOutageError,
+      418 => ScrapeUnblocker::APIError
     }.each do |status, klass|
       client = make_client([{ status: status, body: "nope" }], max_retries: 0)
       err = assert_raises(klass) { client.get_page_source("https://example.com") }
       assert_equal status, err.status_code
+    end
+  end
+
+  def test_billing_error_subclass_from_body
+    {
+      "Quota exceeded\n" => ScrapeUnblocker::QuotaExceededError,
+      "Credit limit exceeded\n" => ScrapeUnblocker::CreditLimitExceededError,
+      "Payment failed - update payment method\n" => ScrapeUnblocker::PaymentFailedError,
+      "something new we do not know yet" => ScrapeUnblocker::PaymentRequiredError
+    }.each do |body, klass|
+      client = make_client([{ status: 402, body: body }], max_retries: 0)
+      err = assert_raises(klass) { client.get_page_source("https://example.com") }
+      assert_kind_of ScrapeUnblocker::PaymentRequiredError, err
+      assert_equal 402, err.status_code
+      assert_equal body, err.body
+    end
+  end
+
+  def test_auth_error_subclass_from_body
+    {
+      "No valid subscription\n" => ScrapeUnblocker::NoSubscriptionError,
+      "Unauthorized\n" => ScrapeUnblocker::AuthenticationError
+    }.each do |body, klass|
+      client = make_client([{ status: 401, body: body }], max_retries: 0)
+      err = assert_raises(klass) { client.get_page_source("https://example.com") }
+      assert_kind_of ScrapeUnblocker::AuthenticationError, err
+      assert_equal 401, err.status_code
+    end
+  end
+
+  # These clear when the key or billing state changes, never on a retry.
+  def test_auth_and_billing_errors_are_not_retried
+    [401, 402].each do |status|
+      client = make_client([{ status: status, body: "Quota exceeded" }], max_retries: 3)
+      assert_raises(ScrapeUnblocker::APIError) { client.get_page_source("https://example.com") }
+      assert_equal 1, @urls.length
+      @urls.clear
     end
   end
 
