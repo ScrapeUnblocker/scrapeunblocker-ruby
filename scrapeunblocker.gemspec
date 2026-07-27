@@ -12,14 +12,14 @@ Gem::Specification.new do |spec|
   spec.description = "JS-rendered pages that bypass Cloudflare, DataDome, " \
                      "PerimeterX and Akamai, plus Google SERP and Skyscanner " \
                      "flights/hotels/car-hire scraping as JSON."
-  spec.homepage = "https://scrapeunblocker.com"
+  spec.homepage = "https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7.0"
 
   spec.metadata = {
-    "homepage_uri" => "https://scrapeunblocker.com",
+    "homepage_uri" => "https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk",
     "source_code_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby",
-    "documentation_uri" => "https://developers.scrapeunblocker.com",
+    "documentation_uri" => "https://developers.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk",
     "changelog_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby/blob/main/CHANGELOG.md",
     "bug_tracker_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby/issues",
     "rubygems_mfa_required" => "true"

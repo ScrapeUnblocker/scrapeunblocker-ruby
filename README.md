@@ -1,6 +1,6 @@
 # ScrapeUnblocker Ruby client
 
-Official Ruby client for the [ScrapeUnblocker](https://scrapeunblocker.com) web scraping API.
+Official Ruby client for the [ScrapeUnblocker](https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk) web scraping API.
 
 Every request is fully JavaScript-rendered in a real browser and routed through premium proxies, so it bypasses Cloudflare, DataDome, PerimeterX, Akamai, Kasada and similar anti-bot systems - from one simple call. You are only billed for successful requests.
 
@@ -38,7 +38,7 @@ puts product.page_type # "product"
 p product.data
 ```
 
-Get your API key at [app.scrapeunblocker.com](https://app.scrapeunblocker.com). The free trial does not require a credit card.
+Get your API key at [app.scrapeunblocker.com](https://app.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk). The free trial does not require a credit card.
 
 ## Authentication
 
@@ -201,9 +201,9 @@ ScrapeUnblocker::Client.new(
 
 ## Links
 
-- Documentation: https://developers.scrapeunblocker.com
-- Website: https://scrapeunblocker.com
-- Dashboard: https://app.scrapeunblocker.com
+- Documentation: [developers.scrapeunblocker.com](https://developers.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk)
+- Website: [scrapeunblocker.com](https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk)
+- Dashboard: [app.scrapeunblocker.com](https://app.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk)
 
 ## License
 
