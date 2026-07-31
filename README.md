@@ -96,6 +96,20 @@ goods["results"].each { |item| puts "#{item['title']} #{item['price']} #{item['u
 
 `channel` is one of `"1688"` (default), `"taobao"` or `"official"`. `sort` is one of `"default"`, `"price_asc"`, `"price_desc"` or `"best_selling"`. `page_size` max is 60. Oopbuy trademark-blocks brand keywords at its own backend: those come back as a successful `200` with `keywordRejected: true` and an empty `results` array, not an error.
 
+## eBay search
+
+```ruby
+items = su.ebay_search("iphone 13", marketplace: "ebay.com", condition: "used", sort: "newly_listed")
+
+if items["exactMatches"]
+  items["results"].each do |item|
+    puts [item["title"], item["price"], item["currency"], item["condition"]].join(" | ")
+  end
+end
+```
+
+`marketplace` is any of the 19 regional eBay hosts (`ebay.com` default). `condition` is one of `"new"`, `"open_box"`, `"refurbished"`, `"used"` or `"for_parts"`; `sort` is one of `"best_match"` (default), `"newly_listed"`, `"ending_soon"`, `"price_asc"` or `"price_desc"`; `page_size` is 60, 120 or 240. `exactMatches` is `false` when eBay found nothing for the keyword and answered with its own loosely-related suggestions instead, so check it before using the listings.
+
 ## Cookies and the serving proxy
 
 ```ruby

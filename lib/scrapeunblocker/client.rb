@@ -93,6 +93,34 @@ module ScrapeUnblocker
                 page_size: page_size, sort: sort, proxy_country: proxy_country)
     end
 
+    # Search eBay and return the listings as a Hash.
+    #
+    # Each listing carries title, numeric price and currency, condition (with a
+    # normalised conditionCode), seller username and feedback, shipping cost,
+    # sold/watcher/bid counts, image and a clean item URL.
+    #
+    # +marketplace+ is a regional eBay host such as "ebay.com" (default) or
+    # "ebay.de"; +condition+ is one of "new", "open_box", "refurbished", "used"
+    # or "for_parts"; +sort+ is one of "best_match" (default), "newly_listed",
+    # "ending_soon", "price_asc" or "price_desc"; +listing_type+ is "all"
+    # (default), "buy_it_now" or "auction"; +page_size+ is 60, 120 or 240.
+    #
+    # When eBay finds no exact match it still serves a page of loosely related
+    # suggestions, and the response then carries <tt>exactMatches: false</tt>.
+    def ebay_search(keyword, marketplace: "ebay.com", page: 1, page_size: 60,
+                    condition: nil, sort: "best_match", listing_type: "all",
+                    min_price: nil, max_price: nil, free_shipping: false,
+                    seller: nil, category: nil, proxy_country: nil)
+      post_json("/marketplace/ebay-search",
+                keyword: keyword, marketplace: marketplace, page: page,
+                page_size: page_size, condition: condition, sort: sort,
+                listing_type: listing_type, min_price: min_price,
+                max_price: max_price,
+                free_shipping: free_shipping ? true : nil,
+                seller: seller, category: category,
+                proxy_country: proxy_country)
+    end
+
     # Fetch an image URL through the bypass chain and return its raw bytes.
     def get_image(url, proxy_country: nil)
       request("/getImage", url: url, proxy_country: proxy_country)[:body]

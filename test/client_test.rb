@@ -92,6 +92,25 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "proxy_country=US"
   end
 
+  def test_ebay_search_targets_marketplace_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => [], "exactMatches" => true) }])
+    out = client.ebay_search("iphone 13", marketplace: "ebay.de", condition: "used",
+                                          sort: "newly_listed", min_price: 100, max_price: 300)
+
+    assert_equal({ "results" => [], "exactMatches" => true }, out)
+    assert_includes @urls[0], "/marketplace/ebay-search"
+    assert_includes @urls[0], "keyword=iphone"
+    assert_includes @urls[0], "marketplace=ebay.de"
+    assert_includes @urls[0], "condition=used"
+    assert_includes @urls[0], "sort=newly_listed"
+    assert_includes @urls[0], "min_price=100"
+    assert_includes @urls[0], "max_price=300"
+    assert_includes @urls[0], "page_size=60"
+    # Unset optional filters must not be sent at all.
+    refute_includes @urls[0], "seller="
+    refute_includes @urls[0], "free_shipping="
+  end
+
   def test_get_image_returns_bytes
     client = make_client([{ status: 200, body: "\x89PNG" }])
     assert_equal "\x89PNG", client.get_image("https://example.com/x.png")
