@@ -121,6 +121,35 @@ module ScrapeUnblocker
                 proxy_country: proxy_country)
     end
 
+    # Scrape one Amazon product by ASIN or URL and return it as a Hash.
+    #
+    # Returns title, brand, numeric price and currency, list price and savings,
+    # availability, rating, review count, seller, feature bullets, categories
+    # and images. Prices come back in the marketplace's own currency:
+    # +proxy_country+ defaults to the marketplace's home country
+    # (amazon.com -> US), pinning the exit over the ISP pool. Pass either
+    # +asin+ (with +marketplace+) or a full product +url+.
+    def amazon_product(asin: nil, url: nil, marketplace: "amazon.com", proxy_country: nil)
+      post_json("/marketplace/amazon-product",
+                asin: asin, url: url, marketplace: marketplace,
+                proxy_country: proxy_country)
+    end
+
+    # Search Amazon and return the result cards as an Array of Hashes.
+    #
+    # Each card carries asin, title, numeric price and currency, list price,
+    # rating, review count, a clean product URL, image and the sponsored /
+    # prime flags. +sort+ is "featured" (default), "price_asc", "price_desc",
+    # "avg_review" or "newest". Prices are in the marketplace's own currency;
+    # +proxy_country+ defaults to the marketplace's home country.
+    def amazon_search(keyword, marketplace: "amazon.com", page: 1, sort: "featured",
+                      min_price: nil, max_price: nil, proxy_country: nil)
+      post_json("/marketplace/amazon-search",
+                keyword: keyword, marketplace: marketplace, page: page,
+                sort: sort, min_price: min_price, max_price: max_price,
+                proxy_country: proxy_country)
+    end
+
     # Fetch an image URL through the bypass chain and return its raw bytes.
     def get_image(url, proxy_country: nil)
       request("/getImage", url: url, proxy_country: proxy_country)[:body]

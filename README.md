@@ -96,6 +96,24 @@ goods["results"].each { |item| puts "#{item['title']} #{item['price']} #{item['u
 
 `channel` is one of `"1688"` (default), `"taobao"` or `"official"`. `sort` is one of `"default"`, `"price_asc"`, `"price_desc"` or `"best_selling"`. `page_size` max is 60. Oopbuy trademark-blocks brand keywords at its own backend: those come back as a successful `200` with `keywordRejected: true` and an empty `results` array, not an error.
 
+## Amazon
+
+Product and search data as a Hash, priced in the marketplace's own currency:
+
+```ruby
+# One product by ASIN (or url: "https://www.amazon.de/dp/B0BSHF7WHW")
+product = su.amazon_product(asin: "B0BSHF7WHW", marketplace: "amazon.com")
+puts [product["title"], product["price"], product["currency"], product["rating"]].join(" | ")
+
+# Keyword search
+results = su.amazon_search("wireless headphones", sort: "price_asc")
+results["results"].each do |item|
+  puts [item["title"], item["price"], item["currency"], item["asin"]].join(" | ")
+end
+```
+
+`proxy_country` defaults to the marketplace's home country (`amazon.com` -> US, `amazon.de` -> DE), so prices come back in the right currency with no configuration.
+
 ## eBay search
 
 ```ruby

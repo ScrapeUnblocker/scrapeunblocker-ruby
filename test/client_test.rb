@@ -111,6 +111,33 @@ class ClientTest < Minitest::Test
     refute_includes @urls[0], "free_shipping="
   end
 
+  def test_amazon_product_targets_marketplace_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("asin" => "B0BSHF7WHW", "price" => 49.99) }])
+    out = client.amazon_product(asin: "B0BSHF7WHW", marketplace: "amazon.com")
+
+    assert_equal({ "asin" => "B0BSHF7WHW", "price" => 49.99 }, out)
+    assert_includes @urls[0], "/marketplace/amazon-product"
+    assert_includes @urls[0], "asin=B0BSHF7WHW"
+    assert_includes @urls[0], "marketplace=amazon.com"
+    # Unset optional params must not be sent at all.
+    refute_includes @urls[0], "url="
+    refute_includes @urls[0], "proxy_country="
+  end
+
+  def test_amazon_search_targets_marketplace_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => [], "resultsCollected" => 0) }])
+    out = client.amazon_search("wireless headphones", marketplace: "amazon.de",
+                                                       sort: "price_asc", min_price: 50, max_price: 200)
+
+    assert_equal({ "results" => [], "resultsCollected" => 0 }, out)
+    assert_includes @urls[0], "/marketplace/amazon-search"
+    assert_includes @urls[0], "keyword=wireless"
+    assert_includes @urls[0], "marketplace=amazon.de"
+    assert_includes @urls[0], "sort=price_asc"
+    assert_includes @urls[0], "min_price=50"
+    assert_includes @urls[0], "max_price=200"
+  end
+
   def test_get_image_returns_bytes
     client = make_client([{ status: 200, body: "\x89PNG" }])
     assert_equal "\x89PNG", client.get_image("https://example.com/x.png")
