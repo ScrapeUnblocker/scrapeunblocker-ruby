@@ -62,6 +62,47 @@ html = su.get_page_source(
 )
 ```
 
+## Browser steps
+
+Drive the page after it loads with an ordered list of browser actions - fill a form, click through, wait for content, then capture the rendered result. Steps run once in the real browser, in order.
+
+```ruby
+html = su.get_page_source(
+  "https://example.com/search",
+  steps: [
+    { action: "type", selector: "input#q", value: "web scraping", clear: true },
+    { action: "press_key", value: "Enter" },
+    { action: "wait_for", selector: "#results" },
+    { action: "scroll", value: "bottom" }
+  ]
+)
+```
+
+Supported actions and their fields:
+
+| Action | Fields |
+|---|---|
+| `wait_for` | `selector`, `selector_type` (`css` default, `xPath`, `className`, `tagName`), `timeout_ms` |
+| `wait_for_text` | `value` (text to await), `timeout_ms` |
+| `wait` | `value` (milliseconds) |
+| `click` | `selector`, `selector_type`, `timeout_ms` |
+| `type` | `selector`, `selector_type`, `value`, `clear` (bool), `timeout_ms` - types like a human |
+| `select` | `selector`, `selector_type`, `value`, `timeout_ms` |
+| `press_key` | `value` - one of `Enter`, `Tab`, `Escape`, `Backspace`, `Delete`, `Space`, `ArrowUp`, `ArrowDown`, `ArrowLeft`, `ArrowRight`, `Home`, `End`, `PageUp`, `PageDown` |
+| `scroll` | `value` - `"bottom"` or a pixel count |
+
+Steps are not idempotent (they submit forms, click buttons), so a call is not safe to blindly retry. If a step fails, the API answers HTTP 422 and the client raises `ScrapeUnblocker::ValidationError`; its `body` is the JSON describing which step failed (`error: "step_failed"`, `step_index`, `action`, `reason`, `selector`, `html`).
+
+## List elements
+
+Pass `list_elements: true` to get a JSON summary of the matched elements instead of the full HTML. The method then returns a parsed Hash (`{"url", "count", "elements"}`) rather than an HTML String.
+
+```ruby
+result = su.get_page_source("https://example.com", list_elements: true)
+puts result["count"]
+result["elements"].each { |el| p el }
+```
+
 ## Get parsed JSON
 
 ```ruby

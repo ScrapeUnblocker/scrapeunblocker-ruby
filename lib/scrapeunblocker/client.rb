@@ -37,10 +37,31 @@ module ScrapeUnblocker
     end
 
     # Fetch a URL and return the fully rendered HTML.
-    def get_page_source(url, proxy_country: nil, time_sleep: nil, method: nil, value: nil, method_timeout: nil)
-      request("/getPageSource",
-              url: url, proxy_country: proxy_country, time_sleep: time_sleep,
-              method: method, value: value, method_timeout: method_timeout)[:body]
+    #
+    # +steps+ is an ordered Array of browser-action Hashes the API runs in the
+    # real browser after the page loads (each Hash carries an +action+ and its
+    # fields): +wait_for+ {selector, selector_type?, timeout_ms?}, +wait_for_text+
+    # {value, timeout_ms?}, +wait+ {value}, +click+ {selector, selector_type?,
+    # timeout_ms?}, +type+ {selector, selector_type?, value, clear?, timeout_ms?},
+    # +select+ {selector, selector_type?, value, timeout_ms?}, +press_key+ {value},
+    # +scroll+ {value}. +selector_type+ is one of "css" (default), "xPath",
+    # "className" or "tagName". The steps run once and are not idempotent; if a
+    # step fails the API answers HTTP 422 with a JSON body naming the failed step,
+    # which surfaces here as a ScrapeUnblocker::ValidationError.
+    #
+    # +list_elements+, when true, makes the API return a JSON summary of the
+    # matched elements ({"url", "count", "elements"}) instead of HTML. This method
+    # then returns that parsed Hash rather than an HTML String.
+    def get_page_source(url, proxy_country: nil, time_sleep: nil, method: nil, value: nil, method_timeout: nil,
+                        steps: nil, list_elements: nil)
+      body = request("/getPageSource",
+                     url: url, proxy_country: proxy_country, time_sleep: time_sleep,
+                     method: method, value: value, method_timeout: method_timeout,
+                     steps: (steps ? JSON.generate(steps) : nil),
+                     list_elements: (list_elements ? true : nil))[:body]
+      return JSON.parse(body) if list_elements
+
+      body
     end
 
     # Fetch a URL and return structured JSON instead of HTML.

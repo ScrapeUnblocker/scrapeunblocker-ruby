@@ -46,6 +46,51 @@ class ClientTest < Minitest::Test
     refute_includes @urls[0], "time_sleep"
   end
 
+  def test_get_page_source_encodes_steps_as_json_query_param
+    client = make_client([{ status: 200, body: "<html>done</html>" }])
+    steps = [
+      { "action" => "wait_for", "selector" => "#results" },
+      { "action" => "type", "selector" => "input#q", "value" => "hello", "clear" => true },
+      { "action" => "press_key", "value" => "Enter" }
+    ]
+    html = client.get_page_source("https://example.com", steps: steps)
+
+    assert_equal "<html>done</html>", html
+    query = URI.parse(@urls[0]).query
+    steps_param = URI.decode_www_form(query).to_h["steps"]
+    assert_equal steps, JSON.parse(steps_param)
+  end
+
+  def test_get_page_source_omits_steps_when_absent
+    client = make_client([{ status: 200, body: "ok" }])
+    client.get_page_source("https://example.com")
+    refute_includes @urls[0], "steps="
+    refute_includes @urls[0], "list_elements"
+  end
+
+  def test_get_page_source_list_elements_returns_parsed_json
+    payload = { "url" => "https://example.com", "count" => 2,
+                "elements" => [{ "text" => "a" }, { "text" => "b" }] }
+    client = make_client([{ status: 200, body: JSON.generate(payload) }])
+    out = client.get_page_source("https://example.com", list_elements: true)
+
+    assert_equal payload, out
+    assert_includes @urls[0], "list_elements=true"
+  end
+
+  def test_get_page_source_surfaces_step_failed_422
+    body = JSON.generate("error" => "step_failed", "step_index" => 0,
+                         "action" => "wait_for", "reason" => "timeout",
+                         "selector" => "#missing", "html" => "<html></html>")
+    client = make_client([{ status: 422, body: body }], max_retries: 0)
+    err = assert_raises(ScrapeUnblocker::ValidationError) do
+      client.get_page_source("https://example.com",
+                             steps: [{ "action" => "wait_for", "selector" => "#missing" }])
+    end
+    assert_equal 422, err.status_code
+    assert_equal body, err.body
+  end
+
   def test_get_parsed_returns_parsed_page
     payload = { "data" => { "page_type" => "product", "source" => "schema.org", "data" => { "price" => 10 } } }
     client = make_client([{ status: 200, body: JSON.generate(payload) }])

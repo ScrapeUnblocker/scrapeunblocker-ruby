@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.2.0 (2026-08-29)
+
+- `get_page_source` now accepts `steps:` - an ordered Array of browser-action Hashes the API runs in the real browser after the page loads (`wait_for`, `wait_for_text`, `wait`, `click`, `type`, `select`, `press_key`, `scroll`). The array is JSON-encoded into the `steps` query parameter. Steps run once and are not idempotent; a failed step returns HTTP 422 and raises `ScrapeUnblocker::ValidationError`, whose `body` names the failed step (`step_index`, `action`, `reason`, `selector`, `html`).
+- `get_page_source` now accepts `list_elements:` - pass `true` to get a JSON summary of the matched elements (`{"url", "count", "elements"}`) instead of HTML. When set, the method returns the parsed Hash rather than an HTML String, mirroring `get_parsed`.
+
+No breaking changes.
+
 ## 0.1.9 (2026-08-28)
 
 - Added `amazon_product` and `amazon_search` for the new Amazon plugin. `amazon_product(asin:/url:)` returns one product - title, brand, numeric price and currency, list price and savings, availability, rating, review count, seller, feature bullets, categories and images. `amazon_search(keyword, ...)` returns a keyword search's cards - asin, title, price, list price, rating, review count, a clean product URL, image and the sponsored/prime flags - on any of 20 regional marketplaces.
