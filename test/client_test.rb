@@ -123,6 +123,19 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "gl=us"
   end
 
+  def test_meta_ad_library_targets_ads_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    out = client.meta_ad_library("Nike", country: "US")
+
+    assert_equal({ "results" => [] }, out)
+    assert_includes @urls[0], "/ads/meta-ad-library"
+    assert_includes @urls[0], "advertiser=Nike"
+    assert_includes @urls[0], "country=US"
+    # Unset optional filters must not be sent at all.
+    refute_includes @urls[0], "active_status="
+    refute_includes @urls[0], "max_ads="
+  end
+
   def test_oopbuy_search_targets_goods_endpoint
     client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
     out = client.oopbuy_search("running shoes", channel: "taobao", proxy_country: "US")

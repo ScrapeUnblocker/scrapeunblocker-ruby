@@ -128,6 +128,15 @@ local = su.google_local("coffee shops in chicago", proxy_country: "US", gl: "us"
 local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['address']}" }
 ```
 
+## Meta Ad Library
+
+```ruby
+ads = su.meta_ad_library("Nike", country: "US")
+ads["results"].each { |ad| puts "#{ad['id']} #{ad['media_type']}" }
+```
+
+`advertiser` is required. Optional filters: `country`, `active_status`, `media_type` and `max_ads`. Unset filters are dropped and the API applies its own defaults.
+
 ## Oopbuy goods search
 
 ```ruby

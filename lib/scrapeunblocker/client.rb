@@ -101,6 +101,19 @@ module ScrapeUnblocker
                 keyword: keyword, proxy_country: proxy_country, hl: hl, gl: gl)
     end
 
+    # Fetch an advertiser's Meta (Facebook) Ad Library ads and return them as a Hash.
+    #
+    # +advertiser+ is the advertiser name or page to look up. Optional filters:
+    # +country+ (the Ad Library region), +active_status+ (active or inactive
+    # ads), +media_type+ (image, video, etc.) and +max_ads+ (a cap on how many
+    # ads to return). Unset filters are dropped from the request and the API
+    # applies its own defaults.
+    def meta_ad_library(advertiser, country: nil, active_status: nil, media_type: nil, max_ads: nil)
+      post_json("/ads/meta-ad-library",
+                advertiser: advertiser, country: country, active_status: active_status,
+                media_type: media_type, max_ads: max_ads)
+    end
+
     # Search Oopbuy (1688, Taobao or official channel) and return the goods as a Hash.
     #
     # Returns matched products, each with spu, channel, title, titleCn, price,

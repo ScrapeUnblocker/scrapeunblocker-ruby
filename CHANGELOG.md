@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.2.1 (2026-09-02)
+
+- Added `meta_ad_library(advertiser, ...)` for the new Meta Ad Library plugin (`POST /ads/meta-ad-library`) - returns an advertiser's Meta (Facebook) Ad Library ads as a Hash. `advertiser` is required; optional filters `country`, `active_status`, `media_type` and `max_ads` are dropped when unset so the API applies its own defaults.
+
+No breaking changes.
+
 ## 0.2.0 (2026-08-29)
 
 - `get_page_source` now accepts `steps:` - an ordered Array of browser-action Hashes the API runs in the real browser after the page loads (`wait_for`, `wait_for_text`, `wait`, `click`, `type`, `select`, `press_key`, `scroll`). The array is JSON-encoded into the `steps` query parameter. Steps run once and are not idempotent; a failed step returns HTTP 422 and raises `ScrapeUnblocker::ValidationError`, whose `body` names the failed step (`step_index`, `action`, `reason`, `selector`, `html`).
