@@ -275,4 +275,30 @@ class ClientTest < Minitest::Test
     assert_equal "recovered", client.get_page_source("https://example.com")
     assert_equal 2, @urls.length
   end
+  def test_tiktok_plugin_endpoints
+    client = make_client([
+      { status: 200, body: JSON.generate("username" => "nasa", "videos" => []) },
+      { status: 200, body: JSON.generate("id" => "7665075736742530317") },
+      { status: 200, body: JSON.generate("hashtag" => "nasa", "videos" => []) }
+    ])
+    profile = client.tiktok_profile("nasa", max_videos: 5, video_details: false)
+    video = client.tiktok_video("7665075736742530317", include_transcript: true, transcript_language: "eng")
+    tag = client.tiktok_hashtag("#nasa", max_videos: 0)
+
+    assert_equal "nasa", profile["username"]
+    assert_equal "7665075736742530317", video["id"]
+    assert_equal "nasa", tag["hashtag"]
+    assert_includes @urls[0], "/social/tiktok-profile"
+    assert_includes @urls[0], "username=nasa"
+    assert_includes @urls[0], "max_videos=5"
+    assert_includes @urls[0], "video_details=false"
+    assert_includes @urls[1], "/social/tiktok-video"
+    assert_includes @urls[1], "include_transcript=true"
+    assert_includes @urls[1], "transcript_language=eng"
+    assert_includes @urls[2], "/social/tiktok-hashtag"
+    assert_includes @urls[2], "hashtag=%23nasa"
+    assert_includes @urls[2], "max_videos=0"
+    refute_includes @urls[2], "video_details="
+  end
+
 end

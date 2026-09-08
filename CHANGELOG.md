@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.0 (2026-09-08)
+
+- Added `tiktok_profile`, `tiktok_video` and `tiktok_hashtag` for the new TikTok plugin: a creator's exact follower / like / video counts with their newest videos (up to 200), any video or photo post with exact plays, likes, comments, shares, saves and reposts, hashtags, music, play / download URLs, subtitle tracks and an optional transcript, and a hashtag's total views and videos with its videos. No login.
+
 ## 0.2.1 (2026-09-02)
 
 - Added `meta_ad_library(advertiser, ...)` for the new Meta Ad Library plugin (`POST /ads/meta-ad-library`) - returns an advertiser's Meta (Facebook) Ad Library ads as a Hash. `advertiser` is required; optional filters `country`, `active_status`, `media_type` and `max_ads` are dropped when unset so the API applies its own defaults.

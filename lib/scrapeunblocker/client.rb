@@ -190,6 +190,37 @@ module ScrapeUnblocker
     end
 
     # @api private
+    # Scrape a public TikTok creator profile and its newest videos.
+    #
+    # Returns the exact follower, following, like and video counts, bio, bio
+    # link, verified / private / organization / seller flags, avatar and a
+    # +videos+ array of the creator's newest posts (up to 200), each in the
+    # full #tiktok_video shape. No login.
+    def tiktok_profile(username, max_videos: 10, video_details: true, proxy_country: nil)
+      post_json("/social/tiktok-profile",
+                username: username, max_videos: max_videos,
+                video_details: video_details ? nil : false,
+                proxy_country: proxy_country)
+    end
+
+    # Scrape one TikTok video or photo post: exact plays, likes, comments,
+    # shares, saves and reposts, hashtags, mentions, author, music, play /
+    # download URLs, subtitle tracks and, with +include_transcript+, the
+    # transcript as text.
+    def tiktok_video(url, include_transcript: false, transcript_language: nil, proxy_country: nil)
+      post_json("/social/tiktok-video",
+                url: url, include_transcript: include_transcript ? true : nil,
+                transcript_language: transcript_language, proxy_country: proxy_country)
+    end
+
+    # Scrape a TikTok hashtag: total views and videos plus its videos (up to 200).
+    def tiktok_hashtag(hashtag, max_videos: 10, video_details: true, proxy_country: nil)
+      post_json("/social/tiktok-hashtag",
+                hashtag: hashtag, max_videos: max_videos,
+                video_details: video_details ? nil : false,
+                proxy_country: proxy_country)
+    end
+
     def post_json(path, params)
       JSON.parse(request(path, params)[:body])
     end
