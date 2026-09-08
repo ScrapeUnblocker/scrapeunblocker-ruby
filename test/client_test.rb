@@ -301,4 +301,18 @@ class ClientTest < Minitest::Test
     refute_includes @urls[2], "video_details="
   end
 
+  def test_tiktok_search_and_comments
+    client = make_client([
+      { status: 200, body: JSON.generate("query" => "space", "results" => []) },
+      { status: 200, body: JSON.generate("videoId" => "1", "comments" => []) }
+    ])
+    assert_equal "space", client.tiktok_search("space", max_results: 30, proxy_country: "US")["query"]
+    assert_equal "1", client.tiktok_comments("7665075736742530317", max_comments: 100)["videoId"]
+    assert_includes @urls[0], "/social/tiktok-search"
+    assert_includes @urls[0], "query=space"
+    assert_includes @urls[0], "max_results=30"
+    assert_includes @urls[1], "/social/tiktok-comments"
+    assert_includes @urls[1], "max_comments=100"
+  end
+
 end

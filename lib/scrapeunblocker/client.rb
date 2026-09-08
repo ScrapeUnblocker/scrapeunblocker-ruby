@@ -221,6 +221,22 @@ module ScrapeUnblocker
                 proxy_country: proxy_country)
     end
 
+    # Search TikTok videos by keyword. Runs in a browser session that clears
+    # TikTok's captcha, so +results+ carry TikTok's own ranking (region via
+    # +proxy_country+), each in the full #tiktok_video shape. 20-45 s.
+    def tiktok_search(query, max_results: 20, proxy_country: nil)
+      post_json("/social/tiktok-search",
+                query: query, max_results: max_results, proxy_country: proxy_country)
+    end
+
+    # Scrape the comments of a TikTok post (text, date, likes, reply count,
+    # author, creator flags, preloaded replies) plus +totalComments+ and
+    # +hasMore+. Runs in a browser session that clears TikTok's captcha. 20-45 s.
+    def tiktok_comments(url, max_comments: 50, proxy_country: nil)
+      post_json("/social/tiktok-comments",
+                url: url, max_comments: max_comments, proxy_country: proxy_country)
+    end
+
     def post_json(path, params)
       JSON.parse(request(path, params)[:body])
     end
