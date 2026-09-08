@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.metadata = {
     "homepage_uri" => "https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk",
     "source_code_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby",
-    "documentation_uri" => "https://developers.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk",
+    "documentation_uri" => "https://docs.scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk",
     "changelog_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby/blob/main/CHANGELOG.md",
     "bug_tracker_uri" => "https://github.com/ScrapeUnblocker/scrapeunblocker-ruby/issues",
     "rubygems_mfa_required" => "true"
