@@ -7,6 +7,7 @@ require "json"
 require_relative "errors"
 require_relative "parsed_page"
 require_relative "skyscanner"
+require_relative "southwest"
 require_relative "version"
 
 module ScrapeUnblocker
@@ -22,6 +23,9 @@ module ScrapeUnblocker
     # @return [Skyscanner] the Skyscanner plugin endpoints
     attr_reader :skyscanner
 
+    # @return [Southwest] the Southwest Airlines plugin endpoints
+    attr_reader :southwest
+
     def initialize(api_key: nil, base_url: DEFAULT_BASE_URL, timeout: 180, max_retries: 2, transport: nil)
       @api_key = api_key || ENV["SCRAPEUNBLOCKER_KEY"]
       if @api_key.nil? || @api_key.empty?
@@ -34,6 +38,7 @@ module ScrapeUnblocker
       @max_retries = max_retries
       @transport = transport || method(:net_http_transport)
       @skyscanner = Skyscanner.new(self)
+      @southwest = Southwest.new(self)
     end
 
     # Fetch a URL and return the fully rendered HTML.

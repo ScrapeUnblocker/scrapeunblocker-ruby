@@ -210,6 +210,32 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "origin=London"
   end
 
+  def test_southwest_flights
+    client = make_client([{ status: 200, body: JSON.generate("itineraries" => []) }])
+    out = client.southwest.flights(origin: "DAL", dest: "HOU", depart_date: "2026-10-20",
+                                   return_date: "2026-10-27", adults: 2, fare_type: "points")
+
+    assert_equal({ "itineraries" => [] }, out)
+    assert_includes @urls[0], "/flights/southwest-quotes"
+    assert_includes @urls[0], "origin=DAL"
+    assert_includes @urls[0], "dest=HOU"
+    assert_includes @urls[0], "depart_date=2026-10-20"
+    assert_includes @urls[0], "return_date=2026-10-27"
+    assert_includes @urls[0], "adults=2"
+    assert_includes @urls[0], "fare_type=points"
+    assert_includes @urls[0], "proxy_country=US"
+    assert_includes @urls[0], "max_attempts=3"
+  end
+
+  def test_southwest_flights_omits_return_date_for_one_way
+    client = make_client([{ status: 200, body: JSON.generate("itineraries" => []) }])
+    client.southwest.flights(origin: "DAL", dest: "HOU", depart_date: "2026-10-20")
+
+    assert_includes @urls[0], "/flights/southwest-quotes"
+    assert_includes @urls[0], "fare_type=dollars"
+    refute_includes @urls[0], "return_date="
+  end
+
   def test_error_mapping
     {
       400 => ScrapeUnblocker::InvalidRequestError,

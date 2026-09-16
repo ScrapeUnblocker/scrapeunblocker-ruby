@@ -4,6 +4,7 @@ require_relative "scrapeunblocker/version"
 require_relative "scrapeunblocker/errors"
 require_relative "scrapeunblocker/parsed_page"
 require_relative "scrapeunblocker/skyscanner"
+require_relative "scrapeunblocker/southwest"
 require_relative "scrapeunblocker/client"
 
 # Official Ruby client for the ScrapeUnblocker web scraping API.

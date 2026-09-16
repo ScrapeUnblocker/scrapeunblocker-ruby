@@ -223,6 +223,25 @@ hotels = su.skyscanner.hotels(destination: "Madrid", checkin: "2026-09-01", chec
 cars = su.skyscanner.carhire(pickup: "Madrid", pickup_datetime: "2026-09-01T10:00", dropoff_datetime: "2026-09-03T10:00")
 ```
 
+## Southwest plugin
+
+Southwest Airlines flight quotes as JSON. `origin` and `dest` are IATA airport codes; omit `return_date` for a one-way search.
+
+```ruby
+flights = su.southwest.flights(
+  origin: "DAL", dest: "HOU",
+  depart_date: "2026-10-20", return_date: "2026-10-27"
+)
+
+# One-way, priced in Rapid Rewards points
+oneway = su.southwest.flights(
+  origin: "DAL", dest: "HOU",
+  depart_date: "2026-10-20", adults: 2, fare_type: "points"
+)
+```
+
+`adults` is 1-8 (default 1), `fare_type` is `"dollars"` (default) or `"points"`, `proxy_country` defaults to `"US"` and `max_attempts` is 1-5 (default 3). The call returns the raw booking / shopping JSON.
+
 ## Error handling
 
 Non-2xx responses raise typed errors, all subclasses of `ScrapeUnblocker::Error`.
