@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.5.0 (2026-09-17)
+
+- Added `google_images(q, ...)` for the new Google Images plugin (`POST /images/google-search`). Given a keyword `q` it returns Google Images results as a Hash - each with the full-size `imageUrl` and its `sourceDomain`, plus the source page URL, title, source name, thumbnail URL, pixel dimensions and file size. Optional `gl` (ISO-2 lowercase market), `max_results` (1-100) and `proxy_country` (ISO-2) refine the search.
+
+No breaking changes.
+
 ## 0.4.0 (2026-09-16)
 
 - Added `southwest.flights(origin:, dest:, depart_date:, ...)` for the new Southwest Airlines plugin (`POST /flights/southwest-quotes`), reached through the new `su.southwest` namespace and mirroring `su.skyscanner`. `origin` and `dest` are IATA airport codes; `depart_date` and the optional `return_date` are `YYYY-MM-DD` (omit `return_date` for a one-way search). Optional `adults` (1-8, default 1), `fare_type` (`"dollars"` default or `"points"`), `proxy_country` (default `"US"`) and `max_attempts` (1-5, default 3). Returns the raw booking / shopping JSON as a Hash.

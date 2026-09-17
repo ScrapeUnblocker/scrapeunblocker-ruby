@@ -128,6 +128,13 @@ local = su.google_local("coffee shops in chicago", proxy_country: "US", gl: "us"
 local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['address']}" }
 ```
 
+## Google Images
+
+```ruby
+images = su.google_images("golden retriever puppy", proxy_country: "US", gl: "us")
+images["results"].each { |img| puts "#{img['imageUrl']} #{img['sourceDomain']} #{img['title']}" }
+```
+
 ## Meta Ad Library
 
 ```ruby

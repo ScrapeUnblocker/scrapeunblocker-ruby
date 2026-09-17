@@ -123,6 +123,19 @@ class ClientTest < Minitest::Test
     assert_includes @urls[0], "gl=us"
   end
 
+  def test_google_images_targets_images_endpoint
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    out = client.google_images("golden retriever puppy", proxy_country: "US", gl: "us")
+
+    assert_equal({ "results" => [] }, out)
+    assert_includes @urls[0], "/images/google-search"
+    assert_includes @urls[0], "q=golden"
+    assert_includes @urls[0], "proxy_country=US"
+    assert_includes @urls[0], "gl=us"
+    # Unset optional params must not be sent at all.
+    refute_includes @urls[0], "max_results="
+  end
+
   def test_meta_ad_library_targets_ads_endpoint
     client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
     out = client.meta_ad_library("Nike", country: "US")
