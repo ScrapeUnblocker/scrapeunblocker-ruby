@@ -111,11 +111,13 @@ module ScrapeUnblocker
     # Returns image results, each with the full-size +imageUrl+ and its
     # +sourceDomain+, plus the source page URL, title, source name, thumbnail
     # URL, pixel dimensions and file size. +q+ is the search keyword. Set
-    # +proxy_country+ (and optionally +gl+) to target a market, and
-    # +max_results+ (1-100) to cap the count.
-    def google_images(q, proxy_country: nil, gl: nil, max_results: nil)
+    # +proxy_country+ to target a market (the Google market follows it; +gl+
+    # is an optional override), +pages+ (1-5, ~100 results each; each page
+    # fetched is billed as one request, see +pagesFetched+) and +max_results+
+    # (1-500) to cap the count.
+    def google_images(q, proxy_country: nil, pages: nil, gl: nil, max_results: nil)
       post_json("/images/google-search",
-                q: q, gl: gl, max_results: max_results, proxy_country: proxy_country)
+                q: q, pages: pages, gl: gl, max_results: max_results, proxy_country: proxy_country)
     end
 
     # Fetch an advertiser's Meta (Facebook) Ad Library ads and return them as a Hash.

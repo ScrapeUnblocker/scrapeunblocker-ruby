@@ -131,7 +131,7 @@ local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['addre
 ## Google Images
 
 ```ruby
-images = su.google_images("golden retriever puppy", proxy_country: "US", gl: "us")
+images = su.google_images("golden retriever puppy", proxy_country: "US", pages: 3)
 images["results"].each { |img| puts "#{img['imageUrl']} #{img['sourceDomain']} #{img['title']}" }
 ```
 

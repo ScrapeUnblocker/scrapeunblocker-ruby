@@ -136,6 +136,16 @@ class ClientTest < Minitest::Test
     refute_includes @urls[0], "max_results="
   end
 
+  def test_google_images_sends_pages
+    client = make_client([{ status: 200, body: JSON.generate("results" => [], "pagesFetched" => 3) }])
+    out = client.google_images("golden retriever puppy", proxy_country: "DE", pages: 3)
+
+    assert_equal 3, out["pagesFetched"]
+    assert_includes @urls[0], "pages=3"
+    assert_includes @urls[0], "proxy_country=DE"
+    refute_includes @urls[0], "gl="
+  end
+
   def test_meta_ad_library_targets_ads_endpoint
     client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
     out = client.meta_ad_library("Nike", country: "US")
