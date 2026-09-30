@@ -73,6 +73,11 @@ module ScrapeUnblocker
     end
 
     # Fetch a URL and return structured JSON instead of HTML.
+    #
+    # Raises ScrapeUnblocker::NoDataExtractedError (not billed) when the page
+    # rendered but held no structured data - use #get_page_source for the HTML -
+    # and ScrapeUnblocker::TargetNotFoundError (billed, #html nil) when the
+    # target page itself answered 404 or 410.
     def get_parsed(url, proxy_country: nil, time_sleep: nil, refresh_rules: false, rules_hint: nil)
       body = request("/getPageSource",
                      url: url, parsed_data: true, proxy_country: proxy_country,

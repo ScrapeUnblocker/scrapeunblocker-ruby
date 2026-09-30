@@ -308,6 +308,46 @@ class ClientTest < Minitest::Test
     assert_equal body, err.body
   end
 
+  def test_target_not_found_with_parsed_data_has_no_html
+    body = JSON.generate(data: { page_type: "not_found", data: {} })
+    client = make_client([{ status: 404, body: body, headers: { "X-Origin-Status" => "404" } }])
+    err = assert_raises(ScrapeUnblocker::TargetNotFoundError) { client.get_parsed("https://example.com/gone") }
+    # The body is parsed-data JSON, not the target's page.
+    assert_nil err.html
+    assert_equal body, err.body
+    assert_equal 404, err.origin_status
+  end
+
+  NO_DATA = JSON.generate(
+    error: "no_data_extracted",
+    detail: "The page was rendered, but no structured data could be extracted from it. " \
+            "Not billed. Call without parsed_data to get the HTML."
+  )
+
+  def test_no_data_extracted_raises_a_typed_error
+    client = make_client([{ status: 422, body: NO_DATA }])
+    err = assert_raises(ScrapeUnblocker::NoDataExtractedError) { client.get_parsed("https://example.com") }
+    assert_kind_of ScrapeUnblocker::ValidationError, err
+    assert_equal 422, err.status_code
+    assert_includes err.message, "Not billed"
+    assert err.detail.start_with?("The page was rendered")
+    # Never retried: the same page yields the same result.
+    assert_equal 1, @urls.length
+  end
+
+  def test_no_data_extracted_without_detail_still_says_not_billed
+    client = make_client([{ status: 422, body: JSON.generate(error: "no_data_extracted") }])
+    err = assert_raises(ScrapeUnblocker::NoDataExtractedError) { client.get_parsed("https://example.com") }
+    assert_includes err.message, "Not billed"
+    assert_nil err.detail
+  end
+
+  def test_plain_422_stays_validation_error
+    client = make_client([{ status: 422, body: JSON.generate(detail: [{ loc: %w[query url] }]) }])
+    err = assert_raises(ScrapeUnblocker::ValidationError) { client.get_page_source("https://example.com") }
+    refute_kind_of ScrapeUnblocker::NoDataExtractedError, err
+  end
+
   def test_api_404_without_origin_status_stays_not_found
     client = make_client([{ status: 404, body: "nope" }])
     err = assert_raises(ScrapeUnblocker::NotFoundError) { client.get_page_source("https://example.com") }

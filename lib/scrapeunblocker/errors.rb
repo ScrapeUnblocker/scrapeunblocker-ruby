@@ -128,6 +128,22 @@ module ScrapeUnblocker
   # each problem field. Read it from #body.
   class ValidationError < APIError; end
 
+  # The page rendered but no structured data came out of it (HTTP 422).
+  #
+  # Raised by #get_parsed when the API loaded the page but could not extract any
+  # structured fields from it. The API answers 422 with a JSON body of
+  # {"error": "no_data_extracted", "detail": ...}; +detail+ holds the API's
+  # explanation. The call is not billed and retrying returns the same answer;
+  # call #get_page_source for the HTML.
+  class NoDataExtractedError < ValidationError
+    attr_reader :detail
+
+    def initialize(message, status_code:, body: nil, detail: nil)
+      super(message, status_code: status_code, body: body)
+      @detail = detail
+    end
+  end
+
   # The target site blocked every available bypass path (HTTP 403).
   # Blocked calls are not billed.
   class BlockedError < APIError; end
@@ -206,11 +222,34 @@ module ScrapeUnblocker
   end
   private_class_method :target_not_found_error
 
+  # parsed_data answers 422 with {"error": "no_data_extracted", "detail"} when
+  # the page rendered but held no structured data. Anything else returns nil so
+  # the general ValidationError applies.
+  def self.no_data_extracted_error(status, body)
+    return nil unless status == 422
+
+    data = begin
+      JSON.parse(body.to_s)
+    rescue JSON::ParserError
+      nil
+    end
+    return nil unless data.is_a?(Hash) && data["error"] == "no_data_extracted"
+
+    detail = data["detail"].is_a?(String) && !data["detail"].empty? ? data["detail"] : nil
+    message = detail || "The page was rendered, but no structured data could be extracted from it. Not billed."
+    message = "#{message} Not billed." unless message.downcase.include?("not billed")
+    NoDataExtractedError.new(message, status_code: status, body: body, detail: detail)
+  end
+  private_class_method :no_data_extracted_error
+
   # Build a typed error from an HTTP status code, response body and headers
   # (a Hash with lowercase names).
   def self.error_for_status(status, body, headers = {})
     target_error = target_not_found_error(status, body, headers || {})
     return target_error if target_error
+
+    no_data_error = no_data_extracted_error(status, body)
+    return no_data_error if no_data_error
 
     snippet = (body || "").strip.gsub(/\s+/, " ")
     snippet = "#{snippet[0, 200]}..." if snippet.length > 200
