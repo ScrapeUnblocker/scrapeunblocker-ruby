@@ -1,5 +1,7 @@
 # frozen_string_literal: true
 
+require "json"
+
 module ScrapeUnblocker
   # Base class for every error raised by this library.
   class Error < StandardError; end
@@ -78,9 +80,37 @@ module ScrapeUnblocker
   # use instead.
   class InvalidRequestError < APIError; end
 
-  # The page loaded but the requested element was absent (HTTP 404).
-  # Only #get_image raises this: the page rendered and held no <img> tag.
+  # Something the call asked for does not exist (HTTP 404).
+  #
+  # #get_image raises it when the page rendered but held no <img> tag, and
+  # plugin methods raise it when the item they look up does not exist. When the
+  # target page itself answered 404 or 410, the more specific
+  # TargetNotFoundError subclass is raised instead.
   class NotFoundError < APIError; end
+
+  # The target page itself does not exist (HTTP 404 or 410).
+  #
+  # Raised by #get_page_source, #get_parsed and #get_page_with_cookies when the
+  # site you asked for answered 404 or 410 on its own. The API passes that
+  # status through and marks it with the X-Origin-Status header, which is how
+  # this is told apart from an API-side 404. It is the target's final answer,
+  # not a block, so it is never retried - and the call is billed, because the
+  # page was fetched and delivered.
+  #
+  # +origin_status+ is the status the target answered with (404 or 410),
+  # +html+ the target's own not-found page as served (can be empty; nil when
+  # the body is a parsed-data JSON payload), and +destination_url+ the URL the
+  # target answered for, when the API sent X-Destination-URL.
+  class TargetNotFoundError < NotFoundError
+    attr_reader :origin_status, :html, :destination_url
+
+    def initialize(message, status_code:, origin_status:, body: nil, html: nil, destination_url: nil)
+      super(message, status_code: status_code, body: body)
+      @origin_status = origin_status
+      @html = html
+      @destination_url = destination_url
+    end
+  end
 
   # The browser run did not finish in time on our side (HTTP 408).
   #
@@ -153,8 +183,35 @@ module ScrapeUnblocker
   end
   private_class_method :billing_error_class
 
-  # Build a typed error from an HTTP status code and response body.
-  def self.error_for_status(status, body)
+  # The API passes a target's "page does not exist" answer through with its
+  # status and an X-Origin-Status header. A 404 without that header is the
+  # API's own (a plugin lookup, a missing element) and returns nil so the
+  # general NotFoundError applies.
+  def self.target_not_found_error(status, body, headers)
+    origin = headers["x-origin-status"]
+    return nil unless [404, 410].include?(status) && origin && !origin.to_s.empty?
+
+    origin_status = Integer(origin.to_s, exception: false) || status
+    html = body
+    begin
+      data = JSON.parse(body.to_s)
+      html = data["html"].is_a?(String) ? data["html"] : nil if data.is_a?(Hash)
+    rescue JSON::ParserError
+      # Not JSON: the body is the target's own page.
+    end
+    message = "Target page does not exist (HTTP #{origin_status}). This is the " \
+              "target's own answer, not a block; the call is billed."
+    TargetNotFoundError.new(message, status_code: status, body: body, origin_status: origin_status,
+                                     html: html, destination_url: headers["x-destination-url"])
+  end
+  private_class_method :target_not_found_error
+
+  # Build a typed error from an HTTP status code, response body and headers
+  # (a Hash with lowercase names).
+  def self.error_for_status(status, body, headers = {})
+    target_error = target_not_found_error(status, body, headers || {})
+    return target_error if target_error
+
     snippet = (body || "").strip.gsub(/\s+/, " ")
     snippet = "#{snippet[0, 200]}..." if snippet.length > 200
     base = BASE_MESSAGES.fetch(status, "API returned HTTP #{status}")

@@ -279,6 +279,46 @@ class ClientTest < Minitest::Test
     end
   end
 
+  def test_target_not_found_raises_with_the_page
+    [404, 410].each do |status|
+      client = make_client([{ status: status, body: "<html><h1>Not Found</h1></html>",
+                              headers: { "X-Origin-Status" => status.to_s,
+                                         "X-Destination-URL" => "https://example.com/gone" } }])
+      err = assert_raises(ScrapeUnblocker::TargetNotFoundError) do
+        client.get_page_source("https://example.com/gone")
+      end
+      assert_kind_of ScrapeUnblocker::NotFoundError, err
+      assert_equal status, err.status_code
+      assert_equal status, err.origin_status
+      assert_equal "<html><h1>Not Found</h1></html>", err.html
+      assert_equal "https://example.com/gone", err.destination_url
+      assert_includes err.message, "billed"
+      # Never retried: the target's answer will not change.
+      assert_equal 1, @urls.length
+    end
+  end
+
+  def test_target_not_found_with_cookies_exposes_the_html
+    body = JSON.generate(html: "<html>gone</html>", cookies: [], proxy_address: "direct")
+    client = make_client([{ status: 404, body: body, headers: { "x-origin-status" => ["404"] } }])
+    err = assert_raises(ScrapeUnblocker::TargetNotFoundError) do
+      client.get_page_with_cookies("https://example.com/gone")
+    end
+    assert_equal "<html>gone</html>", err.html
+    assert_equal body, err.body
+  end
+
+  def test_api_404_without_origin_status_stays_not_found
+    client = make_client([{ status: 404, body: "nope" }])
+    err = assert_raises(ScrapeUnblocker::NotFoundError) { client.get_page_source("https://example.com") }
+    refute_kind_of ScrapeUnblocker::TargetNotFoundError, err
+  end
+
+  def test_legacy_200_with_origin_status_returns_the_page
+    client = make_client([{ status: 200, body: "<html>gone</html>", headers: { "x-origin-status" => "404" } }])
+    assert_equal "<html>gone</html>", client.get_page_source("https://example.com/gone")
+  end
+
   def test_billing_error_subclass_from_body
     {
       "Quota exceeded\n" => ScrapeUnblocker::QuotaExceededError,

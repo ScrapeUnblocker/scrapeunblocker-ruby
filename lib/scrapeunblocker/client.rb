@@ -57,6 +57,9 @@ module ScrapeUnblocker
     # +list_elements+, when true, makes the API return a JSON summary of the
     # matched elements ({"url", "count", "elements"}) instead of HTML. This method
     # then returns that parsed Hash rather than an HTML String.
+    #
+    # When the target page itself answers 404 or 410 this raises
+    # ScrapeUnblocker::TargetNotFoundError (billed; the not-found page is on #html).
     def get_page_source(url, proxy_country: nil, time_sleep: nil, method: nil, value: nil, method_timeout: nil,
                         steps: nil, list_elements: nil)
       body = request("/getPageSource",
@@ -284,7 +287,8 @@ module ScrapeUnblocker
 
         return { status: status, body: body } if status >= 200 && status < 300
 
-        raise ScrapeUnblocker.error_for_status(status, body)
+        response_headers = (result[:headers] || {}).to_h { |k, v| [k.to_s.downcase, Array(v).join(", ")] }
+        raise ScrapeUnblocker.error_for_status(status, body, response_headers)
       end
     end
 
@@ -315,7 +319,7 @@ module ScrapeUnblocker
         raise ConnectionError, "Could not reach the API: #{e.message}"
       end
 
-      { status: response.code.to_i, body: response.body }
+      { status: response.code.to_i, body: response.body, headers: response.each_header.to_h }
     end
   end
 end
