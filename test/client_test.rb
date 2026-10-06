@@ -99,8 +99,31 @@ class ClientTest < Minitest::Test
     assert_instance_of ScrapeUnblocker::ParsedPage, result
     assert_equal "product", result.page_type
     assert_equal({ "price" => 10 }, result.data)
+    assert result.data_extracted?
+    assert_nil result.html
+    assert_nil result.detail
     assert_includes @urls[0], "parsed_data=true"
     assert_includes @urls[0], "refresh_rules=true"
+  end
+
+  def test_get_parsed_with_no_data_returns_the_page
+    payload = {
+      "data" => { "page_type" => "unknown", "data" => {} },
+      "data_extracted" => false,
+      "detail" => "The page was rendered, but no structured data could be extracted from it. " \
+                  "The rendered HTML is in `html`.",
+      "html" => "<html>\n <body>\n  <h1>\n   Example\n  </h1>\n </body>\n</html>"
+    }
+    client = make_client([{ status: 200, body: JSON.generate(payload) }])
+    result = client.get_parsed("https://example.com")
+
+    assert_instance_of ScrapeUnblocker::ParsedPage, result
+    refute result.data_extracted?
+    assert_equal "unknown", result.page_type
+    assert_equal({}, result.data)
+    assert_includes result.html, "Example"
+    assert result.detail.start_with?("The page was rendered")
+    assert_equal 1, @urls.size
   end
 
   def test_serp_targets_serpapi
@@ -318,6 +341,7 @@ class ClientTest < Minitest::Test
     assert_equal 404, err.origin_status
   end
 
+  # Legacy: the API no longer sends this 422, but its mapping stays in place.
   NO_DATA = JSON.generate(
     error: "no_data_extracted",
     detail: "The page was rendered, but no structured data could be extracted from it. " \

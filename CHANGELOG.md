@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.8.0 (2026-10-06)
+
+- `get_parsed` on a page that rendered but held no structured data now returns a normal `ParsedPage` instead of raising `NoDataExtractedError`. The API answers this case with a billed 200: `data` is empty, the new `data_extracted?` is `false`, the new `detail` explains it and the new `html` carries the rendered page, so no second call is needed. On a successful parse `data_extracted?` is `true` and `html` / `detail` are `nil`.
+- `NoDataExtractedError` is deprecated: the API no longer sends the 422 `no_data_extracted`. The class stays so existing `rescue` clauses keep loading.
+
+Behaviour change: code that rescued `NoDataExtractedError` should check `page.data_extracted?` instead.
+
 ## 0.7.1 (2026-09-30)
 
 - New `ScrapeUnblocker::NoDataExtractedError` (a subclass of `ValidationError`): raised by `get_parsed` when the page rendered but no structured data could be extracted from it. The API answers 422 with `{"error": "no_data_extracted", "detail": ...}`; the error carries `detail`. The call is not billed and is never retried - use `get_page_source` for the HTML. Before, this came back as a billed 200 with empty `data`.

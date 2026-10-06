@@ -282,7 +282,6 @@ end
 | `BrowserTimeoutError` | 408 | Our browser run timed out before the page was ready |
 | `UnsupportedContentError` | 415 | The URL serves something other than HTML |
 | `ValidationError` | 422 | Missing or wrong-typed parameter; `body` holds the `detail` array |
-| `NoDataExtractedError` | 422 | `get_parsed`: the page rendered but held no structured data; carries `detail` (subclass of `ValidationError`, not billed) |
 | `RateLimitError` | 429 | Too many requests |
 | `UpstreamOutageError` | 503 | The target origin is down |
 | `ServerError` | 5xx | Unexpected server error, including a 504 upstream timeout |
@@ -306,20 +305,19 @@ end
 
 With `get_parsed` the body is the parsed-data JSON (`{"data": {"page_type": "not_found", ...}}`), so `html` is `nil` there; the raw JSON is on `#body`.
 
-### No structured data on the page (422)
+### No structured data on the page
 
-When `get_parsed` renders the page but can extract no structured data from it, the API answers 422 and the client raises `ScrapeUnblocker::NoDataExtractedError`. The call is **not billed**, and retrying gives the same result - fetch the HTML with `get_page_source` instead:
+When `get_parsed` renders the page but can extract no structured data from it, the API still answers 200 and the client returns a normal `ParsedPage`: `data` is empty, `data_extracted?` is `false`, `detail` says why, and `html` carries the rendered page. The call is billed like any delivered page, so you already have the HTML - no second call needed:
 
 ```ruby
-begin
-  page = su.get_parsed("https://example.com/some-page")
-rescue ScrapeUnblocker::NoDataExtractedError => e
-  puts e.detail          # the API's explanation
-  html = su.get_page_source("https://example.com/some-page")
+page = su.get_parsed("https://example.com/some-page")
+unless page.data_extracted?
+  puts page.detail       # the API's explanation
+  html = page.html       # the rendered page, parse it yourself
 end
 ```
 
-`NoDataExtractedError` subclasses `ValidationError`, so `rescue ScrapeUnblocker::ValidationError` catches it too.
+On a successful parse `data_extracted?` is `true` and `html` is `nil`. Up to 0.7.1 this case raised `NoDataExtractedError` (a 422); the API no longer sends that, and the class stays only so existing `rescue` clauses keep loading.
 
 Transient failures (429, 502, 503, 504 and network errors) are retried automatically with exponential backoff. A 401 or 402 is never retried - it clears when the key or the billing state changes, not on another attempt. Neither is billed or counted against your quota, because the request is refused before anything is scraped.
 

@@ -11,12 +11,25 @@ module ScrapeUnblocker
     attr_reader :data
     # @return [Hash] the full JSON payload as returned by the API
     attr_reader :raw
+    # @return [String, nil] the rendered page when #data_extracted? is false
+    attr_reader :html
+    # @return [String, nil] the API's explanation when #data_extracted? is false
+    attr_reader :detail
 
-    def initialize(page_type:, source:, data:, raw:)
+    def initialize(page_type:, source:, data:, raw:, data_extracted: true, html: nil, detail: nil)
       @page_type = page_type
       @source = source
       @data = data
       @raw = raw
+      @data_extracted = data_extracted
+      @html = html
+      @detail = detail
+    end
+
+    # @return [Boolean] false when the page rendered but no structured data
+    #   could be extracted from it (#data is then empty, #html holds the page)
+    def data_extracted?
+      @data_extracted
     end
 
     def self.from_hash(payload)
@@ -25,7 +38,10 @@ module ScrapeUnblocker
         page_type: inner["page_type"],
         source: inner["source"],
         data: inner["data"],
-        raw: payload
+        raw: payload,
+        data_extracted: payload["data_extracted"] != false,
+        html: payload["html"],
+        detail: payload["detail"]
       )
     end
   end

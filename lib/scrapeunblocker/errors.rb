@@ -128,13 +128,13 @@ module ScrapeUnblocker
   # each problem field. Read it from #body.
   class ValidationError < APIError; end
 
-  # The page rendered but no structured data came out of it (HTTP 422).
+  # Deprecated: the API no longer sends this 422.
   #
-  # Raised by #get_parsed when the API loaded the page but could not extract any
-  # structured fields from it. The API answers 422 with a JSON body of
-  # {"error": "no_data_extracted", "detail": ...}; +detail+ holds the API's
-  # explanation. The call is not billed and retrying returns the same answer;
-  # call #get_page_source for the HTML.
+  # A page that rendered but held no structured data now comes back from
+  # #get_parsed as a normal ParsedPage with #data_extracted? false and the page
+  # on #html (a billed 200). The class stays so existing rescue clauses keep
+  # loading; it is raised only for a legacy 422 body of
+  # {"error": "no_data_extracted", "detail": ...}.
   class NoDataExtractedError < ValidationError
     attr_reader :detail
 
@@ -222,9 +222,9 @@ module ScrapeUnblocker
   end
   private_class_method :target_not_found_error
 
-  # parsed_data answers 422 with {"error": "no_data_extracted", "detail"} when
-  # the page rendered but held no structured data. Anything else returns nil so
-  # the general ValidationError applies.
+  # Maps a legacy 422 {"error": "no_data_extracted", "detail"} body; the API now
+  # answers an empty parse with a 200 (data_extracted: false). Anything else
+  # returns nil so the general ValidationError applies.
   def self.no_data_extracted_error(status, body)
     return nil unless status == 422
 
