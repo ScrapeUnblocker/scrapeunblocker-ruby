@@ -108,7 +108,6 @@ result["elements"].each { |el| p el }
 ```ruby
 result = su.get_parsed("https://www.walmart.com/ip/12345")
 puts result.page_type # e.g. "product"
-puts result.source    # how it was extracted
 p result.data         # the fields
 
 # If a parse ever comes back wrong, force a fresh set of rules:
