@@ -258,7 +258,7 @@ begin
 rescue ScrapeUnblocker::BlockedError
   # 403: the target blocked every bypass path (not billed)
 rescue ScrapeUnblocker::PaymentRequiredError
-  # 402: quota, credit limit, or a failed payment - fix billing
+  # 402: quota, credit limit, your budget limit, or a failed payment - fix billing
 rescue ScrapeUnblocker::RateLimitError
   # 429: slow down
 rescue ScrapeUnblocker::UpstreamOutageError
@@ -271,9 +271,10 @@ end
 | `InvalidRequestError` | 400 | Bad URL, unsupported scheme, or the API key header was not sent |
 | `AuthenticationError` | 401 | Key not recognised - typo, stray whitespace, or a rotated key |
 | `NoSubscriptionError` | 401 | Key is fine, but the account has no active plan |
-| `PaymentRequiredError` | 402 | Billing block - base class for the three below |
+| `PaymentRequiredError` | 402 | Billing block - base class for the four below |
 | `QuotaExceededError` | 402 | The plan's requests for this period are used up |
 | `CreditLimitExceededError` | 402 | Unpaid balance is past the account's credit limit |
+| `BudgetExceededError` | 402 | This billing period's spend reached the monthly budget limit you set |
 | `PaymentFailedError` | 402 | A card payment was declined three times |
 | `BlockedError` | 403 | Blocked by bot protection on every path |
 | `NotFoundError` | 404 | What you asked for does not exist - no image on the page (`get_image`), or a plugin lookup found nothing |
@@ -322,7 +323,7 @@ Transient failures (429, 502, 503, 504 and network errors) are retried automatic
 
 ### Billing errors (402)
 
-The three billing blocks share a status code and differ only in their message, so the client raises a dedicated error for each:
+The four billing blocks share a status code and differ only in their message, so the client raises a dedicated error for each:
 
 ```ruby
 begin
@@ -331,12 +332,16 @@ rescue ScrapeUnblocker::QuotaExceededError
   # plan quota (plus any overage allowance) is used up for this period
 rescue ScrapeUnblocker::CreditLimitExceededError
   # unpaid balance passed the account credit limit
+rescue ScrapeUnblocker::BudgetExceededError
+  # this period's spend reached the monthly budget limit set in your profile
 rescue ScrapeUnblocker::PaymentFailedError
   # card declined three times - update the payment method
 end
 ```
 
-When more than one applies, the most serious wins: failed payment outranks credit limit, which outranks quota. All three lift by themselves once the billing state changes - access returns within about a minute, and the API key stays the same. One catch worth knowing: subscribing to a new plan does **not** clear `PaymentFailedError`, because the old unpaid invoice stays open until it is paid.
+When more than one applies, the most serious wins: failed payment outranks credit limit, which outranks quota, which outranks your own budget limit. All four lift by themselves once the billing state changes - access returns within about a minute, and the API key stays the same. One catch worth knowing: subscribing to a new plan does **not** clear `PaymentFailedError`, because the old unpaid invoice stays open until it is paid.
+
+`BudgetExceededError` (body `User set budget exceeded`) means this billing period's spend reached the monthly budget limit you set in your [profile](https://app.scrapeunblocker.com/dashboard/profile?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk) (EUR, excluding VAT). The key works again at the start of the next billing period, or within about a minute after you raise or remove the limit.
 
 Full details for every status code: [docs.scrapeunblocker.com/errors](https://docs.scrapeunblocker.com/errors).
 

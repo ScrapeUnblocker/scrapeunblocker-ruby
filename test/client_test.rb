@@ -387,6 +387,7 @@ class ClientTest < Minitest::Test
     {
       "Quota exceeded\n" => ScrapeUnblocker::QuotaExceededError,
       "Credit limit exceeded\n" => ScrapeUnblocker::CreditLimitExceededError,
+      "User set budget exceeded\n" => ScrapeUnblocker::BudgetExceededError,
       "Payment failed - update payment method\n" => ScrapeUnblocker::PaymentFailedError,
       "something new we do not know yet" => ScrapeUnblocker::PaymentRequiredError
     }.each do |body, klass|

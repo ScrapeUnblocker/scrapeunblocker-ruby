@@ -36,15 +36,16 @@ module ScrapeUnblocker
   # The account has a billing problem (HTTP 402).
   #
   # Credentials are fine - the request was stopped for a billing reason. There
-  # are three, each raised as a dedicated subclass: QuotaExceededError,
-  # CreditLimitExceededError and PaymentFailedError. Rescue this base class to
-  # handle all three.
+  # are four, each raised as a dedicated subclass: QuotaExceededError,
+  # CreditLimitExceededError, BudgetExceededError and PaymentFailedError.
+  # Rescue this base class to handle all four.
   #
   # When more than one applies, the most serious wins: failed payment outranks
-  # credit limit, which outranks quota. All three lift by themselves once the
-  # billing state changes - access returns within roughly a minute, with no key
-  # change needed. Like a 401, a 402 is refused before anything is scraped, so
-  # it is never billed. Retrying is pointless; fix the billing state first.
+  # credit limit, which outranks quota, which outranks your own budget limit.
+  # All four lift by themselves once the billing state changes - access returns
+  # within roughly a minute, with no key change needed. Like a 401, a 402 is
+  # refused before anything is scraped, so it is never billed. Retrying is
+  # pointless; fix the billing state first.
   class PaymentRequiredError < APIError; end
 
   # Every request the plan allows this period has been used (HTTP 402).
@@ -63,6 +64,17 @@ module ScrapeUnblocker
   # are charged automatically when this triggers, so with a working card it
   # usually clears itself within about a minute.
   class CreditLimitExceededError < PaymentRequiredError; end
+
+  # This billing period's spend reached the monthly budget limit you set
+  # (HTTP 402).
+  #
+  # The limit is set in your profile (EUR, excluding VAT), and spend is counted
+  # the way the invoice is: the plan's fixed monthly fee, if any, plus the
+  # requests billed on top of it. Requests paid from coupon credit do not count.
+  # The key works again at the start of the next billing period, or within
+  # about a minute after you raise or remove the limit at
+  # https://app.scrapeunblocker.com/dashboard/profile.
+  class BudgetExceededError < PaymentRequiredError; end
 
   # A card payment has been declined three times (HTTP 402).
   #
@@ -167,7 +179,7 @@ module ScrapeUnblocker
   BASE_MESSAGES = {
     400 => "Invalid request (bad URL, unsupported scheme, or missing API key header)",
     401 => "Authentication failed - key not recognised, or account has no active plan",
-    402 => "Billing block - quota exceeded, credit limit exceeded, or a failed payment",
+    402 => "Billing block - quota exceeded, credit limit exceeded, budget limit reached, or a failed payment",
     403 => "Target blocked by bot protection on every bypass path",
     404 => "Requested element not found on the page",
     408 => "Browser run timed out before the page was ready",
@@ -187,12 +199,13 @@ module ScrapeUnblocker
   end
   private_class_method :auth_error_class
 
-  # The three billing blocks share a status code and differ only in their
+  # The four billing blocks share a status code and differ only in their
   # plain-text body. An unrecognised body falls back to PaymentRequiredError.
   def self.billing_error_class(body)
     text = (body || "").downcase
     return QuotaExceededError if text.include?("quota exceeded")
     return CreditLimitExceededError if text.include?("credit limit exceeded")
+    return BudgetExceededError if text.include?("user set budget exceeded")
     return PaymentFailedError if text.include?("payment failed")
 
     PaymentRequiredError
