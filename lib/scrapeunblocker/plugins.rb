@@ -554,7 +554,7 @@ module ScrapeUnblocker
     # @param max_results [Integer] Products to return (1-30). One page is read: a keyword lists
     # up to 30 products, a category about 15. API default: 30.
     # Calls POST /social/tiktok-shop-search.
-    def tiktok_shop_search(q, category: nil, max_results: nil)
+    def tiktok_shop_search(q = nil, category: nil, max_results: nil)
       post_json("/social/tiktok-shop-search", {
         q: q,
         category: category,
@@ -1080,6 +1080,11 @@ module ScrapeUnblocker
     # prices in AUD (ALDI Australia does not sell groceries online). Listings collect up to
     # `max_results` from `page` on, billed one unit per page.
     #
+    # @param category [String] mode=category: a category link
+    # (https://www.aldi.com.au/products/dairy-eggs-fridge/milk/k/1111111160) or its key
+    # ('1111111160'; '1588161425841179' = Lower Prices). mode=specials: the Special Buys drop -
+    # its date ('2026-10-14') or link (https://www.aldi.com.au/special-buys/2026-10-14); blank =
+    # the current drop.
     # @param theme [String] mode=specials: one theme of the drop, e.g. 'Gardening' (see
     # `promotions[].themes`).
     # @param sort [String] Listing order: relevance, price_asc, price_desc, name_asc, name_desc.
@@ -1091,9 +1096,10 @@ module ScrapeUnblocker
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'AU',
     # 'US'). Leave blank: ALDI answers every country, so the load spreads over all exits.
     # Calls POST /groceries/aldi-au.
-    def aldi_au_specials(theme: nil, sort: nil, page: nil, max_results: nil, proxy_country: nil)
+    def aldi_au_specials(category: nil, theme: nil, sort: nil, page: nil, max_results: nil, proxy_country: nil)
       post_json("/groceries/aldi-au", {
         mode: "specials",
+        category: category,
         theme: theme,
         sort: sort,
         page: page,
@@ -2757,20 +2763,16 @@ module ScrapeUnblocker
     # avoids it. Billed one unit per page fetched (`pagesFetched`).
     #
     # @param query [String] Product name or keyword to search for (mode=search), e.g. 'crm'.
-    # @param page [Integer] 1-based review page to start from: 25 reviews per page, at most 100
-    # (Capterra's limit per product). Use the `nextPage` of a previous response to continue. API
-    # default: 1.
     # @param max_results [Integer] How many reviews to collect across pages (1-500, default 25);
     # each page fetched is one billed unit. With mode=search, how many products (1-20, default
     # 20; one page).
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE'). Leave blank for the country chosen for the site.
     # Calls POST /reviews/capterra.
-    def capterra_search(query, page: nil, max_results: nil, proxy_country: nil)
+    def capterra_search(query, max_results: nil, proxy_country: nil)
       post_json("/reviews/capterra", {
         mode: "search",
         query: query,
-        page: page,
         max_results: max_results,
         proxy_country: proxy_country,
       })
@@ -3227,8 +3229,6 @@ module ScrapeUnblocker
     # ('net.whatsapp.WhatsApp').
     # @param country [String] App Store country (ISO-2), e.g. 'us', 'gb', 'de'. Prices, ratings
     # and reviews are per country. Default: the country in an app URL, else 'us'.
-    # @param lang [String] Listing language for mode=app / mode=search, e.g. 'fr' or 'fr-CA'
-    # (for countries whose store has several languages). Default: the store's own.
     # @param max_results [Integer] mode=search: apps to return (1-200). mode=reviews: reviews to
     # collect (1-500); Apple serves 50 per page and at most 10 pages per country, each page
     # billed as one request. API default: 50.
@@ -3240,12 +3240,11 @@ module ScrapeUnblocker
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE'). Leave blank to let the API pick.
     # Calls POST /apps/app-store.
-    def app_store_reviews(app_id, country: nil, lang: nil, max_results: nil, sort: nil, page: nil, proxy_country: nil)
+    def app_store_reviews(app_id, country: nil, max_results: nil, sort: nil, page: nil, proxy_country: nil)
       post_json("/apps/app-store", {
         mode: "reviews",
         app_id: app_id,
         country: country,
-        lang: lang,
         max_results: max_results,
         sort: sort,
         page: page,

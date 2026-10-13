@@ -151,7 +151,7 @@ module ScrapeUnblocker
     # originalPrice, priceCny, monthSold, image and url. +channel+ is one of
     # "1688" (default), "taobao" or "official"; +sort+ is one of "default",
     # "price_asc", "price_desc" or "best_selling". +page_size+ max is 60.
-    # Brand keywords return HTTP 422.
+    # A brand keyword returns 200 with keywordRejected = true and no products.
     def oopbuy_search(keyword, channel: "1688", page: 1, page_size: 20, sort: "default", proxy_country: nil)
       post_json("/goods/oopbuy-search",
                 keyword: keyword, channel: channel, page: page,
@@ -192,7 +192,7 @@ module ScrapeUnblocker
     # availability, rating, review count, seller, feature bullets, categories
     # and images. Prices come back in the marketplace's own currency:
     # +proxy_country+ defaults to the marketplace's home country
-    # (amazon.com -> US), pinning the exit over the ISP pool. Pass either
+    # (amazon.com -> US). Pass either
     # +asin+ (with +marketplace+) or a full product +url+.
     def amazon_product(asin: nil, url: nil, marketplace: "amazon.com", proxy_country: nil)
       post_json("/marketplace/amazon-product",

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.10.1 (2026-10-13)
+
+- `tiktok_shop_search` takes its keyword as optional, so a category-only search works (`category` option).
+- `aldi_au_specials` takes `category`: a Special Buys drop date such as `2026-10-14`.
+- `capterra_search` no longer offers `page` and `app_store_reviews` no longer offers `lang`; the API ignored both for those calls.
+- Method docs say "proxy country" where they said "exit-IP country", and drop internal routing notes.
+
 ## 0.10.0 (2026-10-13)
 
 - 104 new plugin methods on `ScrapeUnblocker::Client`, one for every public plugin endpoint: e-commerce (Walmart, Target, Best Buy, Home Depot, Etsy, Temu, SHEIN, Zalando, AliExpress, Alibaba, 1688, TikTok Shop, Amazon Best Sellers and reviews), groceries (Woolworths, Coles, ALDI Australia), travel (Booking.com reviews, Airbnb listings and reviews, Tripadvisor), Google (Trends, Shopping, Jobs, Maps place details), Bing / DuckDuckGo / Yahoo / Brave search and images, real estate (Zillow, Redfin, Rightmove, Idealista, ImmobilienScout24), vehicles (mobile.de, AutoScout24), jobs (Indeed, Glassdoor, Naukri, Wellfound, company career sites), reviews and companies (Trustpilot, G2, Capterra, Product Hunt, Crunchbase), Yelp, Naver Place, Google Play, the App Store, YouTube, Spotify, Telegram, Quora, Similarweb, Ahrefs and Semrush. The README lists them by category; every parameter is on the docs plugin pages.
