@@ -114,6 +114,48 @@ p result.data         # the fields
 fresh = su.get_parsed(url, refresh_rules: true, rules_hint: "price is missing")
 ```
 
+## Plugins
+
+Ready-made scrapers for specific sites that return structured JSON. Each
+method takes the plugin's main input positionally and everything else as
+keyword options; options you leave out are not sent, so the API's own
+defaults apply. Every parameter is documented on the
+[plugin pages](https://docs.scrapeunblocker.com/plugins/overview?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk).
+
+```ruby
+products = su.target_search("coffee maker", sort: "price_low", max_results: 48)
+milk = su.woolworths_product("888137")                     # one product, with nutrition
+trends = su.google_trends(%w[coffee tea], geo: "US")       # a list is sent comma-separated
+reviews = su.trustpilot_reviews("www.nike.com", stars: [4, 5])
+jobs = su.career_site_jobs("https://jobs.ashbyhq.com/ramp", keyword: "engineer")
+```
+
+<!-- plugin-methods:start -->
+| Category | Methods |
+| --- | --- |
+| Travel | `skyscanner.flights`, `skyscanner.hotels`, `skyscanner.carhire`, `booking_hotels`, `booking_reviews`, `airbnb_search`, `airbnb_room`, `airbnb_reviews`, `tripadvisor_list`, `tripadvisor_reviews` |
+| Google | `google_local`, `google_images`, `maps_place_details`, `google_trends`, `google_shopping`, `google_jobs` |
+| Search engines | `bing_search`, `bing_images`, `duckduckgo_search`, `yahoo_search`, `yahoo_images`, `brave_search`, `brave_images` |
+| E-commerce | `amazon_product`, `amazon_search`, `amazon_bestsellers`, `amazon_reviews`, `walmart_search`, `target_search`, `bestbuy_search`, `homedepot_search`, `etsy_search`, `temu_search`, `temu_product`, `shein_search`, `zalando_search`, `aliexpress_search`, `alibaba_search`, `alibaba_product`, `alibaba1688_search`, `alibaba1688_product`, `tiktok_shop_search`, `tiktok_shop_product`, `tiktok_shop_store`, `oopbuy_search` |
+| Classifieds & Resale | `ebay_search`, `vinted_search`, `leboncoin_search` |
+| Groceries | `woolworths_search`, `woolworths_category`, `woolworths_specials`, `woolworths_product`, `coles_search`, `coles_category`, `coles_specials`, `coles_product`, `aldi_au_search`, `aldi_au_category`, `aldi_au_specials`, `aldi_au_product` |
+| Real estate | `zillow_search`, `zillow_detail`, `redfin_search`, `redfin_detail`, `rightmove_search`, `idealista_search`, `idealista_detail`, `immobilienscout24_search` |
+| Vehicles | `mobile_de`, `autoscout24_search` |
+| Jobs | `indeed_jobs`, `glassdoor_jobs`, `glassdoor_reviews`, `glassdoor_salaries`, `naukri_jobs`, `wellfound_jobs`, `wellfound_job`, `wellfound_company`, `wellfound_company_search`, `career_site_jobs` |
+| Reviews & Companies | `trustpilot_reviews`, `g2_reviews`, `g2_search`, `capterra_reviews`, `capterra_search`, `product_hunt`, `crunchbase_company`, `crunchbase_search` |
+| Local & Maps | `yelp_search`, `yelp_business`, `yelp_reviews`, `naver_place_search`, `naver_place_details` |
+| Apps | `google_play_app`, `google_play_search`, `app_store_app`, `app_store_search`, `app_store_reviews` |
+| Video, Music & Communities | `youtube_channel`, `youtube_search`, `youtube_comments`, `youtube_transcript`, `spotify_search`, `spotify_artist`, `spotify_album`, `spotify_track`, `spotify_playlist`, `telegram_channel`, `quora_question`, `quora_profile` |
+| SEO & Ads | `similarweb_overview`, `ahrefs`, `semrush_overview`, `meta_ad_library` |
+<!-- plugin-methods:end -->
+
+Any plugin endpoint can also be called by path, with parameters named as the
+API names them - handy for an endpoint added after your gem version:
+
+```ruby
+data = su.plugin("/marketplace/target-search", query: "tv", max_results: 24)
+```
+
 ## Google search (SERP)
 
 ```ruby
@@ -184,19 +226,6 @@ end
 
 `marketplace` is any of the 19 regional eBay hosts (`ebay.com` default). `condition` is one of `"new"`, `"open_box"`, `"refurbished"`, `"used"` or `"for_parts"`; `sort` is one of `"best_match"` (default), `"newly_listed"`, `"ending_soon"`, `"price_asc"` or `"price_desc"`; `page_size` is 60, 120 or 240. `exactMatches` is `false` when eBay found nothing for the keyword and answered with its own loosely-related suggestions instead, so check it before using the listings.
 
-### TikTok
-
-```ruby
-profile = su.tiktok_profile("nasa", max_videos: 5)      # exact stats + newest videos
-video = su.tiktok_video("https://www.tiktok.com/@nasa/video/7665075736742530317", include_transcript: true)
-tag = su.tiktok_hashtag("nasa", max_videos: 10)
-results = su.tiktok_search("space telescope", max_results: 25)   # TikTok's own ranking
-comments = su.tiktok_comments("https://www.tiktok.com/@nasa/video/7665075736742530317", max_comments: 40)
-puts profile["stats"]["followers"], video["stats"]["plays"], tag["stats"]["views"], comments["totalComments"]
-```
-
-Profiles and hashtags list up to 10 videos in a couple of seconds from TikTok's server-rendered widget; ask for more (up to 200) and the real grid is scrolled in a browser session.
-
 ## Cookies and the serving proxy
 
 ```ruby
@@ -228,25 +257,6 @@ flights = su.skyscanner.flights(
 hotels = su.skyscanner.hotels(destination: "Madrid", checkin: "2026-09-01", checkout: "2026-09-03")
 cars = su.skyscanner.carhire(pickup: "Madrid", pickup_datetime: "2026-09-01T10:00", dropoff_datetime: "2026-09-03T10:00")
 ```
-
-## Southwest plugin
-
-Southwest Airlines flight quotes as JSON. `origin` and `dest` are IATA airport codes; omit `return_date` for a one-way search.
-
-```ruby
-flights = su.southwest.flights(
-  origin: "DAL", dest: "HOU",
-  depart_date: "2026-10-20", return_date: "2026-10-27"
-)
-
-# One-way, priced in Rapid Rewards points
-oneway = su.southwest.flights(
-  origin: "DAL", dest: "HOU",
-  depart_date: "2026-10-20", adults: 2, fare_type: "points"
-)
-```
-
-`adults` is 1-8 (default 1), `fare_type` is `"dollars"` (default) or `"points"`, `proxy_country` defaults to `"US"` and `max_attempts` is 1-5 (default 3). The call returns the raw booking / shopping JSON.
 
 ## Error handling
 

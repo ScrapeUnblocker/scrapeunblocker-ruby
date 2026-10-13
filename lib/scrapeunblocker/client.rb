@@ -6,6 +6,7 @@ require "json"
 
 require_relative "errors"
 require_relative "parsed_page"
+require_relative "plugins"
 require_relative "skyscanner"
 require_relative "southwest"
 require_relative "version"
@@ -16,6 +17,8 @@ module ScrapeUnblocker
   #   su = ScrapeUnblocker::Client.new(api_key: "YOUR_API_KEY")
   #   html = su.get_page_source("https://example.com")
   class Client
+    include Plugins
+
     DEFAULT_BASE_URL = "https://api.scrapeunblocker.com"
     API_KEY_HEADER = "x-scrapeunblocker-key"
     RETRYABLE = [429, 502, 503, 504].freeze
@@ -302,8 +305,11 @@ module ScrapeUnblocker
       params.each_with_object([]) do |(key, value), acc|
         next if value.nil?
 
-        value = value ? "true" : "false" if value == true || value == false
-        acc << "#{key}=#{URI.encode_www_form_component(value.to_s)}"
+        # A list is a repeated parameter (stars=4&stars=5), as the API reads it.
+        Array(value).each do |item|
+          item = item ? "true" : "false" if item == true || item == false
+          acc << "#{key}=#{URI.encode_www_form_component(item.to_s)}"
+        end
       end.join("&")
     end
 

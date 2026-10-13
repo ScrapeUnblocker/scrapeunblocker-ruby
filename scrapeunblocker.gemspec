@@ -10,8 +10,9 @@ Gem::Specification.new do |spec|
 
   spec.summary = "Official Ruby client for the ScrapeUnblocker web scraping API."
   spec.description = "JS-rendered pages that bypass Cloudflare, DataDome, " \
-                     "PerimeterX and Akamai, plus Google SERP and Skyscanner " \
-                     "flights/hotels/car-hire scraping as JSON."
+                     "PerimeterX and Akamai, plus Google SERP and 100+ " \
+                     "ready-made site plugins (Amazon, Walmart, Zillow, " \
+                     "Google Trends and more) that return JSON."
   spec.homepage = "https://scrapeunblocker.com?utm_source=rubygems&utm_medium=integration&utm_campaign=ruby-sdk"
   spec.license = "MIT"
   spec.required_ruby_version = ">= 2.7.0"

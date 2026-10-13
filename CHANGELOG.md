@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.10.0 (2026-10-13)
+
+- 104 new plugin methods on `ScrapeUnblocker::Client`, one for every public plugin endpoint: e-commerce (Walmart, Target, Best Buy, Home Depot, Etsy, Temu, SHEIN, Zalando, AliExpress, Alibaba, 1688, TikTok Shop, Amazon Best Sellers and reviews), groceries (Woolworths, Coles, ALDI Australia), travel (Booking.com reviews, Airbnb listings and reviews, Tripadvisor), Google (Trends, Shopping, Jobs, Maps place details), Bing / DuckDuckGo / Yahoo / Brave search and images, real estate (Zillow, Redfin, Rightmove, Idealista, ImmobilienScout24), vehicles (mobile.de, AutoScout24), jobs (Indeed, Glassdoor, Naukri, Wellfound, company career sites), reviews and companies (Trustpilot, G2, Capterra, Product Hunt, Crunchbase), Yelp, Naver Place, Google Play, the App Store, YouTube, Spotify, Telegram, Quora, Similarweb, Ahrefs and Semrush. The README lists them by category; every parameter is on the docs plugin pages.
+- Each method takes the plugin's main input positionally and the rest as keyword options; options left `nil` are not sent, so the API's defaults apply. Methods for one mode of a multi-mode endpoint set the mode themselves (`woolworths_product("888137")`, `spotify_artist(...)`).
+- New `plugin(path, **params)` calls any plugin endpoint by path. Array values are sent as a repeated query parameter.
+
+No breaking changes.
+
 ## 0.9.0 (2026-10-07)
 
 - New `ScrapeUnblocker::BudgetExceededError` (a subclass of `PaymentRequiredError`): raised when the API answers 402 with `User set budget exceeded`, meaning this billing period's spend reached the monthly budget limit (EUR, excluding VAT) set in the [profile](https://app.scrapeunblocker.com/dashboard/profile). It clears at the start of the next billing period, or within about a minute after the limit is raised or removed. Like the other 402s it is never retried and not billed. Before, this body surfaced as a plain `PaymentRequiredError`.
