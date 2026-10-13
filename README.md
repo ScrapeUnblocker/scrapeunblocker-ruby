@@ -145,7 +145,7 @@ jobs = su.career_site_jobs("https://jobs.ashbyhq.com/ramp", keyword: "engineer")
 | Reviews & Companies | `trustpilot_reviews`, `g2_reviews`, `g2_search`, `capterra_reviews`, `capterra_search`, `product_hunt`, `crunchbase_company`, `crunchbase_search` |
 | Local & Maps | `yelp_search`, `yelp_business`, `yelp_reviews`, `naver_place_search`, `naver_place_details` |
 | Apps | `google_play_app`, `google_play_search`, `app_store_app`, `app_store_search`, `app_store_reviews` |
-| Video, Music & Communities | `youtube_channel`, `youtube_search`, `youtube_comments`, `youtube_transcript`, `spotify_search`, `spotify_artist`, `spotify_album`, `spotify_track`, `spotify_playlist`, `telegram_channel`, `quora_question`, `quora_profile` |
+| Video & Music | `youtube_channel`, `youtube_search`, `youtube_transcript`, `spotify_search`, `spotify_artist`, `spotify_album`, `spotify_track`, `spotify_playlist` |
 | SEO & Ads | `similarweb_overview`, `ahrefs`, `semrush_overview`, `meta_ad_library` |
 <!-- plugin-methods:end -->
 

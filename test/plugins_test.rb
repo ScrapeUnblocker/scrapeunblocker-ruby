@@ -24,7 +24,7 @@ class PluginsTest < Minitest::Test
   end
 
   def test_covers_every_public_plugin_endpoint
-    assert_operator plugin_methods.size, :>, 100
+    assert_operator plugin_methods.size, :>, 90
   end
 
   def test_every_method_posts_its_positional_arguments
