@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.11.1 (2026-10-15)
+
+- `get_image` docs: the API now returns the image's original bytes and format (JPEG, PNG, WebP, AVIF, GIF, SVG, ...) instead of a PNG re-encode. The method still returns a binary `String`.
+- A missing image (the host's own 404/410) raises `TargetNotFoundError`; a URL that is not an image raises `UnsupportedContentError`. The 415 message no longer says "does not serve HTML", which was wrong for `get_image`.
+
 ## 0.11.0 (2026-10-13)
 
 - Removed four plugin methods added in 0.10.0: `youtube_comments`, `telegram_channel`, `quora_question` and `quora_profile`. Those plugins are no longer offered through the SDKs; `plugin(path, params)` still reaches any endpoint your account can use.

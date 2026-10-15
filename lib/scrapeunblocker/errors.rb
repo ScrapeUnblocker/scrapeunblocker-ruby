@@ -94,16 +94,15 @@ module ScrapeUnblocker
 
   # Something the call asked for does not exist (HTTP 404).
   #
-  # #get_image raises it when the page rendered but held no <img> tag, and
-  # plugin methods raise it when the item they look up does not exist. When the
+  # Plugin methods raise it when the item they look up does not exist. When the
   # target page itself answered 404 or 410, the more specific
   # TargetNotFoundError subclass is raised instead.
   class NotFoundError < APIError; end
 
   # The target page itself does not exist (HTTP 404 or 410).
   #
-  # Raised by #get_page_source, #get_parsed and #get_page_with_cookies when the
-  # site you asked for answered 404 or 410 on its own. The API passes that
+  # Raised by #get_page_source, #get_parsed, #get_page_with_cookies and
+  # #get_image when the site you asked for answered 404 or 410 on its own. The API passes that
   # status through and marks it with the X-Origin-Status header, which is how
   # this is told apart from an API-side 404. It is the target's final answer,
   # not a block, so it is never retried - and the call is billed, because the
@@ -130,8 +129,10 @@ module ScrapeUnblocker
   # the API answered - it just could not render the page in time.
   class BrowserTimeoutError < APIError; end
 
-  # The URL serves something other than HTML (HTTP 415).
-  # The message names the content type found. For images, use #get_image.
+  # The URL serves a content type the call cannot return (HTTP 415): something
+  # other than HTML for #get_page_source (for images, use #get_image), or
+  # something other than an image for #get_image. The message names the content
+  # type found.
   class UnsupportedContentError < APIError; end
 
   # A request parameter is missing or has the wrong type (HTTP 422).
@@ -183,7 +184,7 @@ module ScrapeUnblocker
     403 => "Target blocked by bot protection on every bypass path",
     404 => "Requested element not found on the page",
     408 => "Browser run timed out before the page was ready",
-    415 => "URL does not serve HTML",
+    415 => "URL serves a content type this call cannot return",
     422 => "Validation error - see the detail array in the response body",
     429 => "Rate limited - too many requests",
     503 => "Upstream origin returned a server-side outage page",

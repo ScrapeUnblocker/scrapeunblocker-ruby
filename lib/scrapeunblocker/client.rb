@@ -215,7 +215,11 @@ module ScrapeUnblocker
                 proxy_country: proxy_country)
     end
 
-    # Fetch an image URL through the bypass chain and return its raw bytes.
+    # Fetch an image and return its bytes exactly as the image host serves them -
+    # the original format (JPEG, PNG, WebP, AVIF, GIF, SVG, ...), nothing
+    # re-encoded. +url+ must point at the image itself: a page URL raises
+    # UnsupportedContentError, and an image the host answers 404 or 410 for
+    # raises TargetNotFoundError.
     def get_image(url, proxy_country: nil)
       request("/getImage", url: url, proxy_country: proxy_country)[:body]
     end

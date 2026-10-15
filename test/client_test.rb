@@ -247,6 +247,21 @@ class ClientTest < Minitest::Test
     assert_equal "\x89PNG", client.get_image("https://example.com/x.png")
   end
 
+  def test_get_image_dead_image_raises_target_not_found
+    client = make_client([{ status: 404, body: "", headers: { "X-Origin-Status" => "404" } }])
+    err = assert_raises(ScrapeUnblocker::TargetNotFoundError) do
+      client.get_image("https://example.com/gone.jpg")
+    end
+    assert_equal 404, err.origin_status
+  end
+
+  def test_get_image_page_url_raises_unsupported_content
+    client = make_client([{ status: 415, body: "The URL returned text/html, not an image." }])
+    assert_raises(ScrapeUnblocker::UnsupportedContentError) do
+      client.get_image("https://example.com/product/1")
+    end
+  end
+
   def test_skyscanner_flights
     client = make_client([{ status: 200, body: JSON.generate("itineraries" => []) }])
     out = client.skyscanner.flights(origin: "London", dest: "Paris")
