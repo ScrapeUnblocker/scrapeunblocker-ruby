@@ -174,7 +174,14 @@ local["results"].each { |biz| puts "#{biz['name']} #{biz['rating']} #{biz['addre
 ```ruby
 images = su.google_images("golden retriever puppy", proxy_country: "US", pages: 3)
 images["results"].each { |img| puts "#{img['imageUrl']} #{img['sourceDomain']} #{img['title']}" }
+
+# Only images Google found in the last day (for a daily scan of the same query)
+new_images = su.google_images("eiffel tower", proxy_country: "US", time_range: "day")
+# Or a fixed window: date_from / date_to (YYYY-MM-DD), each one optional
+october = su.google_images("eiffel tower", date_from: "2026-10-01", date_to: "2026-10-07")
 ```
+
+`time_range` takes `hour`, `day`, `week`, `month` or `year` and cannot be combined with `date_from` / `date_to`.
 
 ## Meta Ad Library
 

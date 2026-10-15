@@ -169,6 +169,24 @@ class ClientTest < Minitest::Test
     refute_includes @urls[0], "gl="
   end
 
+  def test_google_images_sends_time_range
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    client.google_images("eiffel tower", proxy_country: "US", time_range: "day")
+
+    assert_includes @urls[0], "time_range=day"
+    refute_includes @urls[0], "date_from="
+    refute_includes @urls[0], "date_to="
+  end
+
+  def test_google_images_sends_date_window
+    client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
+    client.google_images("eiffel tower", date_from: "2026-10-01", date_to: "2026-10-07")
+
+    assert_includes @urls[0], "date_from=2026-10-01"
+    assert_includes @urls[0], "date_to=2026-10-07"
+    refute_includes @urls[0], "time_range="
+  end
+
   def test_meta_ad_library_targets_ads_endpoint
     client = make_client([{ status: 200, body: JSON.generate("results" => []) }])
     out = client.meta_ad_library("Nike", country: "US")
