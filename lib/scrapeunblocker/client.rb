@@ -307,6 +307,37 @@ module ScrapeUnblocker
                 url: url, max_comments: max_comments, proxy_country: proxy_country)
     end
 
+    # Search Temu by keyword. Returns the matching product urls (about 40 per
+    # page); fetch each url's data with #temu_product.
+    #
+    # @deprecated Temu's plugin is unlisted; kept for compatibility.
+    # @param keyword [String] Search phrase, e.g. 'kids toys' or 'phone case'.
+    # @param limit [Integer] Max product urls to return (one search page carries ~40). API
+    # default: 40.
+    # @param sort [String] Result order, using Temu's own sort: `relevance` (default),
+    # `best_selling`, `recent`, `price_asc` or `price_desc`.
+    # Calls POST /goods/temu-search.
+    def temu_search(keyword, limit: nil, sort: nil)
+      post_json("/goods/temu-search", {
+        keyword: keyword,
+        limit: limit,
+        sort: sort,
+      })
+    end
+
+    # Scrape a Temu product page.
+    #
+    # @deprecated Temu's plugin is unlisted; kept for compatibility.
+    # @param url [String] Full Temu product url, e.g.
+    # 'https://www.temu.com/xyz-g-601099512345678.html'. Must be a product page (its path ends
+    # in `-g-<id>.html`).
+    # Calls POST /goods/temu-product.
+    def temu_product(url)
+      post_json("/goods/temu-product", {
+        url: url,
+      })
+    end
+
     def post_json(path, params)
       JSON.parse(request(path, params)[:body])
     end

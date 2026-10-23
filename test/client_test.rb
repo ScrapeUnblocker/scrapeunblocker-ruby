@@ -564,4 +564,18 @@ class ClientTest < Minitest::Test
     assert_includes @urls[1], "max_comments=100"
   end
 
+  def test_temu_methods_kept_for_compatibility
+    client = make_client([
+      { status: 200, body: JSON.generate("urls" => []) },
+      { status: 200, body: JSON.generate("name" => "Toy") }
+    ])
+    product_url = "https://www.temu.com/xyz-g-601099512345678.html"
+    assert_equal({ "urls" => [] }, client.temu_search("kids toys", limit: 10, sort: "best_selling"))
+    assert_equal({ "name" => "Toy" }, client.temu_product(product_url))
+    assert_equal "https://api.scrapeunblocker.com/goods/temu-search?keyword=kids+toys&limit=10&sort=best_selling",
+                 @urls[0]
+    assert_equal "https://api.scrapeunblocker.com/goods/temu-product?url=#{URI.encode_www_form_component(product_url)}",
+                 @urls[1]
+  end
+
 end

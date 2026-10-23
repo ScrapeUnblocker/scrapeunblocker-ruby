@@ -149,14 +149,14 @@ jobs = su.career_site_jobs("https://jobs.ashbyhq.com/ramp", keyword: "engineer")
 | Category | Methods |
 | --- | --- |
 | Travel | `skyscanner.flights`, `skyscanner.hotels`, `skyscanner.carhire`, `booking_hotels`, `booking_reviews`, `airbnb_search`, `airbnb_room`, `airbnb_reviews`, `tripadvisor_list`, `tripadvisor_reviews` |
-| Google | `google_local`, `google_images`, `maps_place_details`, `google_trends`, `google_shopping`, `google_jobs` |
+| Google | `google_local`, `google_images`, `maps_place_details`, `google_trends`, `google_shopping`, `google_jobs`, `google_hotels`, `google_hotels_property`, `google_news`, `google_ads_transparency`, `google_ads_transparency_advertisers` |
 | Search engines | `bing_search`, `bing_images`, `duckduckgo_search`, `yahoo_search`, `yahoo_images`, `brave_search`, `brave_images` |
-| E-commerce | `amazon_product`, `amazon_search`, `amazon_bestsellers`, `amazon_reviews`, `walmart_search`, `target_search`, `bestbuy_search`, `homedepot_search`, `etsy_search`, `temu_search`, `temu_product`, `shein_search`, `zalando_search`, `aliexpress_search`, `alibaba_search`, `alibaba_product`, `alibaba1688_search`, `alibaba1688_product`, `tiktok_shop_search`, `tiktok_shop_product`, `tiktok_shop_store`, `oopbuy_search` |
+| E-commerce | `amazon_product`, `amazon_search`, `amazon_bestsellers`, `amazon_reviews`, `walmart_search`, `target_search`, `bestbuy_search`, `homedepot_search`, `etsy_search`, `shein_search`, `zalando_search`, `aliexpress_search`, `alibaba_search`, `alibaba_product`, `alibaba1688_search`, `alibaba1688_product`, `tiktok_shop_search`, `tiktok_shop_product`, `tiktok_shop_store`, `oopbuy_search`, `smyths_inventory`, `smyths_details`, `smyths_search`, `smyths_category`, `wish_search`, `wish_product`, `shopee_search`, `shopee_product`, `taobao_search`, `taobao_product` |
 | Classifieds & Resale | `ebay_search`, `vinted_search`, `leboncoin_search` |
 | Groceries | `woolworths_search`, `woolworths_category`, `woolworths_specials`, `woolworths_product`, `coles_search`, `coles_category`, `coles_specials`, `coles_product`, `aldi_au_search`, `aldi_au_category`, `aldi_au_specials`, `aldi_au_product` |
 | Real estate | `zillow_search`, `zillow_detail`, `redfin_search`, `redfin_detail`, `rightmove_search`, `idealista_search`, `idealista_detail`, `immobilienscout24_search` |
 | Vehicles | `mobile_de`, `autoscout24_search` |
-| Jobs | `indeed_jobs`, `glassdoor_jobs`, `glassdoor_reviews`, `glassdoor_salaries`, `naukri_jobs`, `wellfound_jobs`, `wellfound_job`, `wellfound_company`, `wellfound_company_search`, `career_site_jobs` |
+| Jobs | `indeed_jobs`, `glassdoor_jobs`, `glassdoor_reviews`, `glassdoor_salaries`, `naukri_jobs`, `wellfound_jobs`, `wellfound_job`, `wellfound_company`, `wellfound_company_search`, `career_site_jobs`, `upwork_jobs` |
 | Reviews & Companies | `trustpilot_reviews`, `g2_reviews`, `g2_search`, `capterra_reviews`, `capterra_search`, `product_hunt`, `crunchbase_company`, `crunchbase_search` |
 | Local & Maps | `yelp_search`, `yelp_business`, `yelp_reviews`, `naver_place_search`, `naver_place_details` |
 | Apps | `google_play_app`, `google_play_search`, `app_store_app`, `app_store_search`, `app_store_reviews` |

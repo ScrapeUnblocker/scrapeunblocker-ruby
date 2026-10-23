@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.14.0 (2026-10-23)
+
+- 16 new plugin methods on `Client`:
+  - Google: `google_hotels(q)` (Google Hotels search with stay prices, ratings and amenities), `google_hotels_property(property_token)` (one property's prices from every booking site), `google_news(q)` (a search, or a section with `topic:`), `google_ads_transparency` (an advertiser's ads from the Ads Transparency Center, picked with `advertiser:` or `domain:`) and `google_ads_transparency_advertisers(q)` (advertiser lookup by name).
+  - E-commerce: `shopee_search(q)` and `shopee_product(url)` (Shopee in eight markets, `country:`), `taobao_search(q)` and `taobao_product(item_id)` (Taobao and Tmall), `smyths_inventory(code)`, `smyths_details(code)`, `smyths_search(query)` and `smyths_category(category)` (Smyths Toys UK), `wish_search(query)` and `wish_product(product)`.
+  - Jobs: `upwork_jobs(q)`.
+- The first argument of `google_news`, `shopee_search`, `shopee_product`, `taobao_search`, `taobao_product` and `upwork_jobs` is optional, for calls that pass another input instead: `google_news(topic: "technology")`, `shopee_product(shop_id: ..., item_id: ...)`, `taobao_product(url: ...)`, `upwork_jobs(sort: "recency")` for the newest jobs. `google_news` takes the API's `when:` window as is (`google_news("tesla", when: "1d")`).
+- `temu_search` and `temu_product` are deprecated: Temu's plugin is unlisted. They are kept for compatibility with the same signatures, now defined on `Client` instead of `ScrapeUnblocker::Plugins`, and are no longer listed in the README.
+- `google_shopping` docs: result cards also carry `currencyCode` and Google's own product ids (`productId`, `catalogId`, `offerId`).
+
+No breaking changes.
+
 ## 0.13.0 (2026-10-23)
 
 - New `get_markdown(url, main_content_only: true, ...)` returns the rendered page as clean Markdown for LLMs, agents and RAG pipelines: headings, lists, tables, absolute links, images with their alt text and code blocks, without scripts, styles, navigation, footers, forms or hidden elements. It sends `markdown=true` to `/getPageSource`, is billed like an HTML call, and returns a UTF-8 `String`.

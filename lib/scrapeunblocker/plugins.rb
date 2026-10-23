@@ -310,48 +310,6 @@ module ScrapeUnblocker
       })
     end
 
-    # Search Temu by keyword.
-    #
-    # Searches Temu for `keyword` and returns the matching product urls (~40 per page). This is
-    # discovery only - fetch each url's data (name, price, rating, reviews, images) through
-    # `POST /goods/temu-product`. Use `sort` to pick Temu's own result order (relevance,
-    # best_selling, recent, price_asc, price_desc). Response time is typically ~2s.
-    #
-    # @param keyword [String] Search phrase, e.g. 'kids toys' or 'phone case'.
-    # @param limit [Integer] Max product urls to return (one search page carries ~40). API
-    # default: 40.
-    # @param sort [String] Result order, using Temu's own sort: `relevance` (default),
-    # `best_selling` (top sales), `recent` (most recent), `price_asc` (price low to high) or
-    # `price_desc` (price high to low). API default: relevance.
-    # Calls POST /goods/temu-search.
-    def temu_search(keyword, limit: nil, sort: nil)
-      post_json("/goods/temu-search", {
-        keyword: keyword,
-        limit: limit,
-        sort: sort,
-      })
-    end
-
-    # Scrape a Temu product page.
-    #
-    # Fetches a single Temu product and returns it as JSON: `name`, `description`, `brand`,
-    # `sku`, `price`, `priceCurrency`, `availability`, `itemCondition`, `rating`, `reviewCount`,
-    # `variantGroupId`, `images`, `reviews` (per-review rating and date; Temu masks the review
-    # text and author name in this document) and `video` (a `{contentUrl, thumbnailUrl,
-    # uploadDate}` object when the product ships one, else null). Temu serves product data only
-    # to search-engine crawlers, so this reads the ld+json SEO document rather than a browser
-    # render. The url must be a product page (path ends in `-g-<id>.html`).
-    #
-    # @param url [String] Full Temu product url, e.g.
-    # 'https://www.temu.com/xyz-g-601099512345678.html'. Must be a product page (its path ends
-    # in `-g-<id>.html`); search/category urls have no product data and are rejected.
-    # Calls POST /goods/temu-product.
-    def temu_product(url)
-      post_json("/goods/temu-product", {
-        url: url,
-      })
-    end
-
     # Scrape AliExpress search results.
     #
     # Searches AliExpress for `keyword` and returns the products as JSON: `title`, product
@@ -535,6 +493,60 @@ module ScrapeUnblocker
       })
     end
 
+    # Scrape Wish product search.
+    #
+    # Searches Wish (wish.com) for `query` and returns `products`: `id`, `name`, `url`, `price`,
+    # `originalPrice` (crossed-out price, when discounted), `currency`, `priceText`, `priceUsd`
+    # (Wish's USD value, comparable across markets), `shipping`, `rating`, `ratingCount`,
+    # `numBought`, `inventory`, `colors`, `sizes`, `merchant` (`id`, `name`, `rating`,
+    # `ratingCount`, `feedback`, `country`), `originCountry`, `shipsFrom`, `tileText`,
+    # `isWishPick`, `position`, `image` and `thumbnail`, plus `totalResults` and `nextPage`.
+    # Wish shows the catalogue and prices of the request's country (`proxy_country`, default
+    # US). Collects up to `max_results` from `page` on, billed one unit per page.
+    #
+    # @param query [String] What to search for, e.g. 'yoga mat' or 'phone case', or a
+    # wish.com/search/... link.
+    # @param page [Integer] 1-based results page to start from (1-300, up to 30 products per
+    # page). API default: 1.
+    # @param max_results [Integer] Products to collect across pages, 1-300. Each page fetched is
+    # billed one unit. API default: 30.
+    # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
+    # 'GB', 'DE'). Wish shows the catalogue, prices and currency of that country. Default 'US'
+    # (prices in USD).
+    # Calls POST /marketplace/wish-search.
+    def wish_search(query, page: nil, max_results: nil, proxy_country: nil)
+      post_json("/marketplace/wish-search", {
+        query: query,
+        page: page,
+        max_results: max_results,
+        proxy_country: proxy_country,
+      })
+    end
+
+    # Scrape one Wish product.
+    #
+    # One Wish (wish.com) product as JSON: `id`, `name`, `url`, `price` (cheapest available
+    # variant), `originalPrice`, `currency`, `priceUsd`, `priceRange`, `shipping`, `inStock`,
+    # `rating`, `ratingCount`, `description`, `attributes`, `badges`, `images`, `merchant`
+    # (`id`, `name`, `handle`, `rating`, `ratingCount`, `tier`), `shipsFrom`, `shipsTo`,
+    # `deliveryEstimate`, `returnPolicy`, `variants` (`id`, `color`, `size`, `price`,
+    # `originalPrice`, `priceUsd`, `shipping`, `inventory`, `available`) and `topReviews`
+    # (`rating`, `comment`, `date`, `variant`, `upvotes`, `country`; no reviewer names). Prices
+    # are those of the request's country (`proxy_country`, default US). One unit per call.
+    #
+    # @param product [String] A Wish product id ('5f96ad46b3f6480c7b9d7b52') or a product link
+    # (https://www.wish.com/product/..., /c/...).
+    # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
+    # 'GB', 'DE'). Wish shows the catalogue, prices and currency of that country. Default 'US'
+    # (prices in USD).
+    # Calls POST /marketplace/wish-product.
+    def wish_product(product, proxy_country: nil)
+      post_json("/marketplace/wish-product", {
+        product: product,
+        proxy_country: proxy_country,
+      })
+    end
+
     # Search TikTok Shop products by keyword or category.
     #
     # Lists TikTok Shop (US) products for a keyword (`q`) or a category (`category`, URL or id).
@@ -610,6 +622,158 @@ module ScrapeUnblocker
       post_json("/social/tiktok-shop-store", {
         store: store,
         max_results: max_results,
+      })
+    end
+
+    # Scrape Shopee product search.
+    #
+    # Searches a Shopee market (Singapore, Indonesia, Malaysia, Thailand, Vietnam, Philippines,
+    # Taiwan or Brazil - `country`) for `q` and returns one page of results: up to 40
+    # `products`, each with `position`, `itemId`, `shopId`, `name`, `url`, `image`, `price`,
+    # `originalPrice` (when Shopee shows the crossed-out price), `discountPercent`, `currency`,
+    # `rating` (average stars), `location` (where the seller ships from) and `labels` (promotion
+    # badges). `sort` orders the results, `min_price` / `max_price` filter them, `shop_id` keeps
+    # one shop's products (or lists the shop without `q`), and `url` takes a Shopee search or
+    # category link instead. Shopee shows one page per search, so run several sort orders or
+    # price ranges for more products. `price` is what Shopee shows a signed-out shopper, which
+    # can be a promotional or new-customer price (see `labels`). Not available: stock, units
+    # sold, rating counts and reviews (Shopee does not publish them on the pages these endpoints
+    # read). One unit per call.
+    #
+    # @param q [String] What to search for, e.g. 'iphone case' or 'air fryer'. Optional with
+    # `shop_id`.
+    # @param country [String] Shopee market: 'sg' (shopee.sg), 'id' (shopee.co.id), 'my'
+    # (shopee.com.my), 'th' (shopee.co.th), 'vn' (shopee.vn), 'ph' (shopee.ph), 'tw'
+    # (shopee.tw), 'br' (shopee.com.br). Default 'sg'. Prices are in that market's currency.
+    # @param shop_id [String] Only this shop's products (the number in a shop's links, e.g.
+    # 442800909). Without `q` it lists the shop.
+    # @param url [String] A Shopee search or category link (e.g.
+    # https://shopee.sg/search?keyword=lego or https://shopee.sg/Cases-Covers-
+    # cat.11013350.11013434.11027839), used as it is; `q`, `country`, `shop_id`, `sort` and the
+    # price filters are then ignored.
+    # @param sort [String] Result order: relevance, sales, newest, price_asc, price_desc. API
+    # default: relevance.
+    # @param min_price [Integer] Lowest price, in the market's currency.
+    # @param max_price [Integer] Highest price, in the market's currency.
+    # @param max_results [Integer] Products to return, 1-40 (one Shopee results page). API
+    # default: 40.
+    # Calls POST /marketplace/shopee-search.
+    def shopee_search(q = nil, country: nil, shop_id: nil, url: nil, sort: nil, min_price: nil, max_price: nil, max_results: nil)
+      post_json("/marketplace/shopee-search", {
+        q: q,
+        country: country,
+        shop_id: shop_id,
+        url: url,
+        sort: sort,
+        min_price: min_price,
+        max_price: max_price,
+        max_results: max_results,
+      })
+    end
+
+    # Scrape one Shopee product.
+    #
+    # One Shopee product as JSON, from a product link (`url`) or `shop_id` + `item_id` +
+    # `country`: `title`, `price`, `originalPrice`, `discountPercent`, `currency`, `rating`
+    # (average stars), `labels`, `images`, `shopLocation` and `shop` (`name`, `username`, `url`,
+    # `rating`, `ratingCount`, `followers`, `itemCount`, `responseRatePercent`,
+    # `isOfficialShop`, `isPreferredPlusSeller`, `location`, `joinedAt`). With `dataLevel: full`
+    # it also has `description`, `brand`, `condition`, `categories`, `videos`, `variations`
+    # (option names), `models` (`modelId`, `name`), `attributes`, `isOfficialShop`,
+    # `isPreOrder`, `estimatedShippingDays` and `createdAt`; `dataLevel: meta` means Shopee
+    # showed only the product's title and main image (some markets), with price, rating and shop
+    # still included. `price` is what Shopee shows a signed-out shopper, which can be a
+    # promotional or new-customer price (see `labels`). Not available: stock, units sold, rating
+    # counts and reviews (Shopee does not publish them on the pages these endpoints read). One
+    # unit per call.
+    #
+    # @param url [String] A Shopee product link, e.g. https://shopee.sg/Beats-
+    # iPhone-17-Case-i.442800909.40270108836 or
+    # https://shopee.co.id/product/1426163997/40581375446.
+    # @param shop_id [String] Instead of `url`: the shop id (the first number after '-i.' in a
+    # product link).
+    # @param item_id [String] Instead of `url`: the item id (the second number after '-i.').
+    # @param country [String] With `shop_id` + `item_id`: Shopee market: 'sg' (shopee.sg), 'id'
+    # (shopee.co.id), 'my' (shopee.com.my), 'th' (shopee.co.th), 'vn' (shopee.vn), 'ph'
+    # (shopee.ph), 'tw' (shopee.tw), 'br' (shopee.com.br). Default 'sg'. Prices are in that
+    # market's currency.
+    # Calls POST /marketplace/shopee-product.
+    def shopee_product(url = nil, shop_id: nil, item_id: nil, country: nil)
+      post_json("/marketplace/shopee-product", {
+        url: url,
+        shop_id: shop_id,
+        item_id: item_id,
+        country: country,
+      })
+    end
+
+    # Scrape Taobao / Tmall keyword or category listings.
+    #
+    # Returns the products Taobao lists for a keyword `q` (or a `category`) as JSON: `products`
+    # (`position`, `itemId`, `title`, `url`, `image`, `price` in yuan with `currency` CNY,
+    # `priceLabel` (Taobao's price tag, e.g. 优惠价), `localPrices` (the same price in the
+    # storefront's currency, HKD and TWD), `shopId`, `shopName`, `descriptionMatchScore`,
+    # `freeShipping`, `categoryId`, `rootCategoryId`, `sellingPoints`, `reviewHighlights`),
+    # `totalResults` (how many listings Taobao reports), and `filterOptions` (brand and property
+    # facets; pass an option's `filter` value back as `filter`). Sort by relevance, sales or
+    # price and filter by a yuan price range (products whose listed price falls outside it are
+    # left out and counted in `droppedOutsidePriceRange`). Taobao shows signed-out visitors only
+    # the first 20 products of a list, so one call returns up to 20 (narrow with price ranges
+    # and filters to reach more). When Taobao has no list for the keyword, the call answers with
+    # the list of the closest keyword Taobao itself suggests and says so: `keywordSubstituted`
+    # true and `matchedKeyword`. Text comes in Chinese as sellers write it. Companion to
+    # `/marketplace/taobao-product`. One unit per call.
+    #
+    # @param q [String] Keyword, in Chinese or English, e.g. '手机壳', '连衣裙', 'phone case' (Chinese
+    # keywords match far more listings). A Taobao search or list link works too. Give `q` or
+    # `category`.
+    # @param category [String] A Taobao category id, e.g. '50005050', or a category list link
+    # (https://www.taobao.com/list/category/50005050.htm). Returns the category's best sellers;
+    # sort and filters apply to keyword searches only.
+    # @param sort [String] Order: relevance, sales, price_asc, price_desc (price in yuan). API
+    # default: relevance.
+    # @param price_min [Float] Only products at or above this many yuan (CNY).
+    # @param price_max [Float] Only products at or below this many yuan (CNY).
+    # @param filter [String] One brand or property filter, as the `filter` value of an option in
+    # `filterOptions` of an earlier answer, e.g. '20000-88634403'.
+    # Calls POST /marketplace/taobao-search.
+    def taobao_search(q = nil, category: nil, sort: nil, price_min: nil, price_max: nil, filter: nil)
+      post_json("/marketplace/taobao-search", {
+        q: q,
+        category: category,
+        sort: sort,
+        price_min: price_min,
+        price_max: price_max,
+        filter: filter,
+      })
+    end
+
+    # Scrape one Taobao / Tmall item.
+    #
+    # Returns one Taobao or Tmall item (by `item_id` or `url`) as JSON: `itemId`, `url`,
+    # `platform` (taobao / tmall), `title` (`titleTruncated` when Taobao shortens it, as it does
+    # for Tmall items), `price`, `originalPrice` and `priceMax` (for a price range) in yuan with
+    # `currency` CNY, `image`, `location` (ships from), `categoryId`, `rootCategoryId`,
+    # `categoryPath`, `freeShipping`, `paymentMethods`, `sellableLanguages`, `rating` (positive
+    # / neutral / negative split and counts; Taobao items only, Tmall does not publish it),
+    # `latestReview` (`rating`, `content`, `date`, `variant`, `hasMedia`, `followUps`; no
+    # reviewer identity, so no review photo or video URLs) and `shop` (`shopId`, `name`, `url`,
+    # `logo`, `sellerType` B = Tmall / C = Taobao, `creditLevel`, `openedAt`, `itemCount`,
+    # `scores` for description, service and delivery). This is what Taobao shows signed-out
+    # visitors: variants (SKUs), stock and monthly sales need a Taobao login and are not
+    # included. Companion to `/marketplace/taobao-search`. One unit per call.
+    #
+    # @param item_id [String] Numeric Taobao or Tmall item id, e.g. '765833709683' (the `id` in
+    # item.taobao.com/item.htm?id=...).
+    # @param url [String] Taobao or Tmall item link, e.g.
+    # 'https://item.taobao.com/item.htm?id=765833709683' or
+    # 'https://detail.tmall.com/item.htm?id=1081364414020' (world.taobao.com, mobile and
+    # overseas item links work too). Either item_id or url is required.
+    # Calls POST /marketplace/taobao-product.
+    def taobao_product(item_id = nil, url: nil)
+      post_json("/marketplace/taobao-product", {
+        item_id: item_id,
+        url: url,
       })
     end
 
@@ -1136,6 +1300,188 @@ module ScrapeUnblocker
       })
     end
 
+    # Smyths Toys UK product stock, price, details and listings.
+    #
+    # Smyths Toys UK (smythstoys.com) as JSON, in four modes. `mode=product` (the default when
+    # `code` is given) returns one product's stock and price as the JSON Smyths' own storefront
+    # reads (`/api/uk/en-gb/product/product-inventory`), unchanged: `code`, `type`, `prices`
+    # (`price`, `value`, `wasPrice`, `thenPrice`, `rrpPrice`, `discountedPercentage`),
+    # `hdSection` (home delivery: `stockStatus`, `stockMessage`, `isAvailableForDelivery`,
+    # `isPreOrder`, `expectedStockDate`, delivery messages), `ccSection` (click & collect: the
+    # same stock fields plus `storeName`, `deliveryMessage`, `storeClosed`), `ageSuitabilities`,
+    # `carrierType`, marketing messages and decals. `code` takes a product code (`225095`), a
+    # product or bundle page link or a product-inventory link; one product is one billed
+    # request. `mode=details&code=` returns the JSON Smyths' product page is built from
+    # (`/api/uk/en-gb/product`, a bundle's from `/api/uk/en-gb/b`), unchanged, one billed
+    # request: `name`, `brand`, `ean`, `description` (HTML), `webFeatures` (the key features
+    # list), the safety warnings `euWarning`, `safetyText`, `urgentSafetyTextHeading` and
+    # `urgentSafetyTextDescription`, `productImages` (the gallery: `thumbnail`, `original` and
+    # `zoom` per `galleryIndex`, videos as `youtubeUrl`), `prices`, `averageRating`,
+    # `numberOfReviews`, `breadcrumb`, `categoryHierarchy`, `ageSuitabilities`,
+    # `assemblyRequired` and more; a bundle adds `subProducts`. `url` and `breadcrumb` paths are
+    # relative to https://www.smythstoys.com/uk/en-gb. `mode=search&query=` and
+    # `mode=category&category=` find product codes: they return `products` (`code`, `name`,
+    # `url`, `prices` with the same fields, `currency`, `image`, `averageRating`, `productType`
+    # - `BUNDLE` for bundles - and `decals`) with `totalResults`, `totalPages` and `nextPage`,
+    # 60 per page; a category also returns its `title`, `breadcrumbs` and `subcategories`
+    # (`code`, `name`, `count`). Smyths' search returns its best 240 matches at most, a category
+    # every product it holds. Listings collect up to `max_results` from `page` on, billed one
+    # unit per page.
+    #
+    # @param code [String] mode=product and mode=details: product code ('225095'), product or
+    # bundle page link, or product-inventory link.
+    # @param bundle [Boolean] mode=product and mode=details: ask for a bundle. A bundle page
+    # link sets it, and a code Smyths does not answer as a product is asked again as a bundle.
+    # API default: false.
+    # Calls POST /marketplace/smyths-inventory.
+    def smyths_inventory(code, bundle: nil)
+      post_json("/marketplace/smyths-inventory", {
+        mode: "product",
+        code: code,
+        bundle: bundle,
+      })
+    end
+
+    # Smyths Toys UK product stock, price, details and listings.
+    #
+    # Smyths Toys UK (smythstoys.com) as JSON, in four modes. `mode=product` (the default when
+    # `code` is given) returns one product's stock and price as the JSON Smyths' own storefront
+    # reads (`/api/uk/en-gb/product/product-inventory`), unchanged: `code`, `type`, `prices`
+    # (`price`, `value`, `wasPrice`, `thenPrice`, `rrpPrice`, `discountedPercentage`),
+    # `hdSection` (home delivery: `stockStatus`, `stockMessage`, `isAvailableForDelivery`,
+    # `isPreOrder`, `expectedStockDate`, delivery messages), `ccSection` (click & collect: the
+    # same stock fields plus `storeName`, `deliveryMessage`, `storeClosed`), `ageSuitabilities`,
+    # `carrierType`, marketing messages and decals. `code` takes a product code (`225095`), a
+    # product or bundle page link or a product-inventory link; one product is one billed
+    # request. `mode=details&code=` returns the JSON Smyths' product page is built from
+    # (`/api/uk/en-gb/product`, a bundle's from `/api/uk/en-gb/b`), unchanged, one billed
+    # request: `name`, `brand`, `ean`, `description` (HTML), `webFeatures` (the key features
+    # list), the safety warnings `euWarning`, `safetyText`, `urgentSafetyTextHeading` and
+    # `urgentSafetyTextDescription`, `productImages` (the gallery: `thumbnail`, `original` and
+    # `zoom` per `galleryIndex`, videos as `youtubeUrl`), `prices`, `averageRating`,
+    # `numberOfReviews`, `breadcrumb`, `categoryHierarchy`, `ageSuitabilities`,
+    # `assemblyRequired` and more; a bundle adds `subProducts`. `url` and `breadcrumb` paths are
+    # relative to https://www.smythstoys.com/uk/en-gb. `mode=search&query=` and
+    # `mode=category&category=` find product codes: they return `products` (`code`, `name`,
+    # `url`, `prices` with the same fields, `currency`, `image`, `averageRating`, `productType`
+    # - `BUNDLE` for bundles - and `decals`) with `totalResults`, `totalPages` and `nextPage`,
+    # 60 per page; a category also returns its `title`, `breadcrumbs` and `subcategories`
+    # (`code`, `name`, `count`). Smyths' search returns its best 240 matches at most, a category
+    # every product it holds. Listings collect up to `max_results` from `page` on, billed one
+    # unit per page.
+    #
+    # @param code [String] mode=product and mode=details: product code ('225095'), product or
+    # bundle page link, or product-inventory link.
+    # @param bundle [Boolean] mode=product and mode=details: ask for a bundle. A bundle page
+    # link sets it, and a code Smyths does not answer as a product is asked again as a bundle.
+    # API default: false.
+    # Calls POST /marketplace/smyths-inventory.
+    def smyths_details(code, bundle: nil)
+      post_json("/marketplace/smyths-inventory", {
+        mode: "details",
+        code: code,
+        bundle: bundle,
+      })
+    end
+
+    # Smyths Toys UK product stock, price, details and listings.
+    #
+    # Smyths Toys UK (smythstoys.com) as JSON, in four modes. `mode=product` (the default when
+    # `code` is given) returns one product's stock and price as the JSON Smyths' own storefront
+    # reads (`/api/uk/en-gb/product/product-inventory`), unchanged: `code`, `type`, `prices`
+    # (`price`, `value`, `wasPrice`, `thenPrice`, `rrpPrice`, `discountedPercentage`),
+    # `hdSection` (home delivery: `stockStatus`, `stockMessage`, `isAvailableForDelivery`,
+    # `isPreOrder`, `expectedStockDate`, delivery messages), `ccSection` (click & collect: the
+    # same stock fields plus `storeName`, `deliveryMessage`, `storeClosed`), `ageSuitabilities`,
+    # `carrierType`, marketing messages and decals. `code` takes a product code (`225095`), a
+    # product or bundle page link or a product-inventory link; one product is one billed
+    # request. `mode=details&code=` returns the JSON Smyths' product page is built from
+    # (`/api/uk/en-gb/product`, a bundle's from `/api/uk/en-gb/b`), unchanged, one billed
+    # request: `name`, `brand`, `ean`, `description` (HTML), `webFeatures` (the key features
+    # list), the safety warnings `euWarning`, `safetyText`, `urgentSafetyTextHeading` and
+    # `urgentSafetyTextDescription`, `productImages` (the gallery: `thumbnail`, `original` and
+    # `zoom` per `galleryIndex`, videos as `youtubeUrl`), `prices`, `averageRating`,
+    # `numberOfReviews`, `breadcrumb`, `categoryHierarchy`, `ageSuitabilities`,
+    # `assemblyRequired` and more; a bundle adds `subProducts`. `url` and `breadcrumb` paths are
+    # relative to https://www.smythstoys.com/uk/en-gb. `mode=search&query=` and
+    # `mode=category&category=` find product codes: they return `products` (`code`, `name`,
+    # `url`, `prices` with the same fields, `currency`, `image`, `averageRating`, `productType`
+    # - `BUNDLE` for bundles - and `decals`) with `totalResults`, `totalPages` and `nextPage`,
+    # 60 per page; a category also returns its `title`, `breadcrumbs` and `subcategories`
+    # (`code`, `name`, `count`). Smyths' search returns its best 240 matches at most, a category
+    # every product it holds. Listings collect up to `max_results` from `page` on, billed one
+    # unit per page.
+    #
+    # @param query [String] mode=search: what to search for, e.g. 'lego star wars'. Smyths
+    # returns its best 240 matches at most - list a category to get every product of a range.
+    # @param sort [String] Listing order. search: relevance, bestsellers, price_asc, price_desc,
+    # rating_desc, newest (the first is the default). category: bestsellers, price_asc,
+    # price_desc, rating_desc, newest (the first is the default).
+    # @param page [Integer] 1-based listing page to start from (60 products per page). API
+    # default: 1.
+    # @param max_results [Integer] Products to collect across pages, 1-600. Each page fetched is
+    # billed one unit. API default: 60.
+    # Calls POST /marketplace/smyths-inventory.
+    def smyths_search(query, sort: nil, page: nil, max_results: nil)
+      post_json("/marketplace/smyths-inventory", {
+        mode: "search",
+        query: query,
+        sort: sort,
+        page: page,
+        max_results: max_results,
+      })
+    end
+
+    # Smyths Toys UK product stock, price, details and listings.
+    #
+    # Smyths Toys UK (smythstoys.com) as JSON, in four modes. `mode=product` (the default when
+    # `code` is given) returns one product's stock and price as the JSON Smyths' own storefront
+    # reads (`/api/uk/en-gb/product/product-inventory`), unchanged: `code`, `type`, `prices`
+    # (`price`, `value`, `wasPrice`, `thenPrice`, `rrpPrice`, `discountedPercentage`),
+    # `hdSection` (home delivery: `stockStatus`, `stockMessage`, `isAvailableForDelivery`,
+    # `isPreOrder`, `expectedStockDate`, delivery messages), `ccSection` (click & collect: the
+    # same stock fields plus `storeName`, `deliveryMessage`, `storeClosed`), `ageSuitabilities`,
+    # `carrierType`, marketing messages and decals. `code` takes a product code (`225095`), a
+    # product or bundle page link or a product-inventory link; one product is one billed
+    # request. `mode=details&code=` returns the JSON Smyths' product page is built from
+    # (`/api/uk/en-gb/product`, a bundle's from `/api/uk/en-gb/b`), unchanged, one billed
+    # request: `name`, `brand`, `ean`, `description` (HTML), `webFeatures` (the key features
+    # list), the safety warnings `euWarning`, `safetyText`, `urgentSafetyTextHeading` and
+    # `urgentSafetyTextDescription`, `productImages` (the gallery: `thumbnail`, `original` and
+    # `zoom` per `galleryIndex`, videos as `youtubeUrl`), `prices`, `averageRating`,
+    # `numberOfReviews`, `breadcrumb`, `categoryHierarchy`, `ageSuitabilities`,
+    # `assemblyRequired` and more; a bundle adds `subProducts`. `url` and `breadcrumb` paths are
+    # relative to https://www.smythstoys.com/uk/en-gb. `mode=search&query=` and
+    # `mode=category&category=` find product codes: they return `products` (`code`, `name`,
+    # `url`, `prices` with the same fields, `currency`, `image`, `averageRating`, `productType`
+    # - `BUNDLE` for bundles - and `decals`) with `totalResults`, `totalPages` and `nextPage`,
+    # 60 per page; a category also returns its `title`, `breadcrumbs` and `subcategories`
+    # (`code`, `name`, `count`). Smyths' search returns its best 240 matches at most, a category
+    # every product it holds. Listings collect up to `max_results` from `page` on, billed one
+    # unit per page.
+    #
+    # @param category [String] mode=category: a category code ('SM060101') or a category page
+    # link (https://www.smythstoys.com/uk/en-gb/toys/action-figures-and-playsets/c/SM060101).
+    # The top categories are Toys SM0601, Baby SM0602, Outdoor SM0603 and Gaming & Tech SM0604;
+    # each listing names its subcategories.
+    # @param sort [String] Listing order. search: relevance, bestsellers, price_asc, price_desc,
+    # rating_desc, newest (the first is the default). category: bestsellers, price_asc,
+    # price_desc, rating_desc, newest (the first is the default).
+    # @param page [Integer] 1-based listing page to start from (60 products per page). API
+    # default: 1.
+    # @param max_results [Integer] Products to collect across pages, 1-600. Each page fetched is
+    # billed one unit. API default: 60.
+    # Calls POST /marketplace/smyths-inventory.
+    def smyths_category(category, sort: nil, page: nil, max_results: nil)
+      post_json("/marketplace/smyths-inventory", {
+        mode: "category",
+        category: category,
+        sort: sort,
+        page: page,
+        max_results: max_results,
+      })
+    end
+
     # Scrape Booking.com hotels.
     #
     # Searches Booking.com for `location` and returns the properties as JSON: `name`, `price`
@@ -1418,11 +1764,13 @@ module ScrapeUnblocker
     # Scrape Google Shopping product listings.
     #
     # Runs the Google Shopping vertical (`udm=28`) for `q` and returns the product cards as
-    # JSON: `title`, `price`, `currency`, `originalPrice`, `discount`, `merchant`, `rating` and
-    # `reviewCount`. Set `proxy_country`/`gl` to target a market (prices/merchants are region-
-    # specific) and `min_price`/`max_price` to filter. One render returns the first page of
-    # products (v1). Note: Google Shopping exposes no per-product URL, so `url` is omitted and
-    # `image` is best-effort.
+    # JSON: `title`, `price`, `currency`, `currencyCode`, `originalPrice`, `discount`,
+    # `merchant`, `rating`, `reviewCount` and Google's own ids for the product (`productId`,
+    # `catalogId`, `offerId` - stable across searches, for tracking one product). Set
+    # `proxy_country`/`gl` to target a market (prices/merchants are region-specific) and
+    # `min_price`/`max_price` to filter. One render returns the first page of products (v1).
+    # Note: Google Shopping exposes no per-product URL, so `url` is omitted and `image` is best-
+    # effort.
     #
     # @param q [String] Product search term, e.g. 'wireless headphones'.
     # @param gl [String] Market of search, ISO-2, e.g. 'us', 'de'. Sets prices/merchants. API
@@ -1556,6 +1904,208 @@ module ScrapeUnblocker
         gl: gl,
         proxy_country: proxy_country,
         raw: raw,
+      })
+    end
+
+    # Scrape Google Hotels search results (prices, ratings, amenities).
+    #
+    # Runs a Google Hotels search for `q` and returns the properties as JSON: `name`, `type`
+    # (hotel / vacation_rental), `propertyToken`, `price` for the stay (`perNight`,
+    # `perNightWithTaxes`, `total`, `totalWithTaxes`, `taxes`, Google's `display` string),
+    # `deal`, `rating`, `reviews`, `ratingsBreakdown`, `reviewTopics`, `hotelClass`, `stars`,
+    # `amenities`, `description`, `website`, `latitude`/`longitude`, `nearbyPlaces`,
+    # `thumbnail`, `images` and `mapsUrl`, plus the page's sponsored `ads`. A query naming one
+    # hotel returns just that hotel (`matchedProperty`). Set the stay with
+    # `check_in`/`check_out`, the party with `adults` and `children` (ages), and `currency`,
+    # `hl` (language) and `gl` (market). `applied` echoes the dates, currency and place Google
+    # actually used. Collect up to `max_results` across pages (each Google page is billed as one
+    # request, see `pagesFetched`); `nextPageToken` continues the list. Pass a `propertyToken`
+    # to `/travel/google-hotels-property` for every booking site's price.
+    #
+    # @param q [String] What to search, as on Google Hotels: a place ('hotels in Paris',
+    # 'Lisbon'), an area or landmark, or a hotel name.
+    # @param check_in [String] Check-in date, YYYY-MM-DD. Leave check_in and check_out empty for
+    # Google's default stay.
+    # @param check_out [String] Check-out date, YYYY-MM-DD (stays of up to 30 nights).
+    # @param adults [Integer] Number of adults (1-10). API default: 2.
+    # @param children [String] Ages of the children, comma-separated, e.g. '7,10' (up to 6).
+    # @param currency [String] Price currency, ISO 4217 (USD, EUR, GBP, ...). API default: USD.
+    # @param hl [String] Language of names, amenities and price formats, e.g. 'en', 'de', 'fr'.
+    # API default: en.
+    # @param gl [String] Market (2-letter country). Google localizes the booking sites to it.
+    # API default: us.
+    # @param page_token [String] `nextPageToken` of a previous response, to continue where it
+    # stopped.
+    # @param max_results [Integer] Properties to collect (1-100). Google serves about 20 per
+    # page; each page is billed as one request. API default: 20.
+    # Calls POST /travel/google-hotels.
+    def google_hotels(q, check_in: nil, check_out: nil, adults: nil, children: nil, currency: nil, hl: nil, gl: nil, page_token: nil, max_results: nil)
+      post_json("/travel/google-hotels", {
+        q: q,
+        check_in: check_in,
+        check_out: check_out,
+        adults: adults,
+        children: children,
+        currency: currency,
+        hl: hl,
+        gl: gl,
+        page_token: page_token,
+        max_results: max_results,
+      })
+    end
+
+    # Scrape one Google Hotels property: prices from every booking site.
+    #
+    # Returns one property from Google Hotels as JSON, identified by the `property_token` of a
+    # `/travel/google-hotels` result: `offers` from every booking site Google lists for the stay
+    # (`provider`, `official` for the hotel's own site, `perNight`/`perNightWithTaxes`,
+    # `total`/`totalWithTaxes`, a Google `link` to book), `rooms` with room-level rates and
+    # free-cancellation deadlines where Google shows them, the lowest `price`, `address`,
+    # `phone`, `website`, `description` and `about`, `rating`, `reviews`, `ratingsBreakdown`,
+    # `reviewTopics`, `hotelClass`, `latitude`/`longitude`, `nearbyPlaces`, `images`, `placeId`
+    # and `mapsUrl`. Set the stay with `check_in`/`check_out`, the party with
+    # `adults`/`children`, and `currency`, `hl`, `gl`. Billed as one request.
+    #
+    # @param property_token [String] `propertyToken` of a /travel/google-hotels result.
+    # @param check_in [String] Check-in date, YYYY-MM-DD. Leave check_in and check_out empty for
+    # Google's default stay.
+    # @param check_out [String] Check-out date, YYYY-MM-DD (stays of up to 30 nights).
+    # @param adults [Integer] Number of adults (1-10). API default: 2.
+    # @param children [String] Ages of the children, comma-separated, e.g. '7,10' (up to 6).
+    # @param currency [String] Price currency, ISO 4217 (USD, EUR, GBP, ...). API default: USD.
+    # @param hl [String] Language, e.g. 'en', 'de', 'fr'. API default: en.
+    # @param gl [String] Market (2-letter country). Google localizes the booking sites to it.
+    # API default: us.
+    # Calls POST /travel/google-hotels-property.
+    def google_hotels_property(property_token, check_in: nil, check_out: nil, adults: nil, children: nil, currency: nil, hl: nil, gl: nil)
+      post_json("/travel/google-hotels-property", {
+        property_token: property_token,
+        check_in: check_in,
+        check_out: check_out,
+        adults: adults,
+        children: children,
+        currency: currency,
+        hl: hl,
+        gl: gl,
+      })
+    end
+
+    # Scrape Google News (search or section).
+    #
+    # Searches Google News for `q`, or lists a section with `topic` (world, nation, business,
+    # technology, entertainment, sports, science, health, top, or a topic id), and returns
+    # `articles`: `position`, `title`, `url` (the publisher's article URL), `source`,
+    # `sourceUrl`, `publishedAt` (ISO 8601 UTC), `imageUrl` (+ `imageWidth`/`imageHeight`),
+    # `authors`, `googleNewsId` and `googleNewsUrl`. Metadata only - no article text. Narrow a
+    # search with `when` (e.g. '1d') or `after`/`before` dates; pick the edition with `hl` and
+    # `gl`. Google News answers a search with up to about 100 articles (no paging - use date
+    # windows to go further back). One unit per call.
+    #
+    # @param q [String] Search query, e.g. 'tesla' or '"web scraping"'. Google News operators
+    # work: quotes, OR, -word, site:reuters.com, intitle:. Pass either `q` or `topic`.
+    # @param topic [String] A section instead of a search: world, nation, business, technology,
+    # entertainment, sports, science, health, or top (the edition's headlines). A Google News
+    # topic id (the 'CAAq...' part of a news.google.com/topics/ URL) also works.
+    # @param hl [String] Language of the Google News edition, e.g. 'en', 'en-GB', 'de', 'fr',
+    # 'pt-BR'. API default: en.
+    # @param gl [String] Country of the Google News edition (2-letter code), e.g. 'us', 'gb',
+    # 'de'. API default: us.
+    # @param when [String] Only articles from the last period: '1h' to '720h', '1d', '7d', '2w',
+    # '1m', '1y'. Search (`q`) only.
+    # @param after [String] Only articles published after this date (YYYY-MM-DD). Search only.
+    # @param before [String] Only articles published before this date (YYYY-MM-DD). Search only.
+    # @param max_results [Integer] Most articles to return, 1-250. Google News returns up to
+    # about 100 articles for a search and about 250 for a section; one call is billed one unit
+    # whatever the count. API default: 100.
+    # Calls POST /search/google-news.
+    def google_news(q = nil, topic: nil, hl: nil, gl: nil, when: nil, after: nil, before: nil, max_results: nil)
+      post_json("/search/google-news", {
+        q: q,
+        topic: topic,
+        hl: hl,
+        gl: gl,
+        when: binding.local_variable_get(:when),
+        after: after,
+        before: before,
+        max_results: max_results,
+      })
+    end
+
+    # Scrape Google ads (Ads Transparency Center).
+    #
+    # Returns an advertiser's Google ads (Search, YouTube, Display, Shopping, Maps, Play) from
+    # the Google Ads Transparency Center for competitor analysis: per ad `creativeId`,
+    # `advertiserId`/`advertiserName`, `format` (text/image/video), `firstShown`, `lastShown`,
+    # `daysShown`, `matchedDomain`, the preview (`imageUrl` with size, or `previewUrl`),
+    # `googleCreativeId`, `googleCustomerId`, `adGroupId` and `adUrl`. Pick ads by `advertiser`
+    # (name or id) or `domain`; filter with `region`, `platform`, `format` and
+    # `date_from`/`date_to`. `include_details` adds per-region reach and targeting,
+    # `include_preview` the ad's texts and YouTube video. Collects up to `max_results` (continue
+    # with `page_token`); billed one unit per page of up to 100 ads, plus one per detail and per
+    # preview fetched (`callUnits`).
+    #
+    # @param advertiser [String] Advertiser to pull ads for: a name (e.g. 'Nike') - resolved to
+    # the best-matching advertiser, reported in `advertisersUsed` (a single brand name no
+    # advertiser is named like falls back to its domain) - or an advertiser id
+    # ('AR16735076323512287233'). Comma-separate up to 10. Pass `advertiser` or `domain`.
+    # @param domain [String] Website the ads point to, e.g. 'nike.com' (ads of every advertiser
+    # for that domain).
+    # @param region [String] Where the ads were shown: a 2-letter country code ('US', 'DE'), a
+    # comma list of them, or 'anywhere' (default).
+    # @param platform [String] Only ads shown on these platforms (comma list): search, youtube,
+    # maps, play, shopping.
+    # @param format [String] Only one ad format: text, image or video.
+    # @param date_from [String] Only ads shown on or after this date (YYYY-MM-DD).
+    # @param date_to [String] Only ads shown on or before this date (YYYY-MM-DD).
+    # @param sort [String] Order of the ads: 'last_shown' (most recently shown first). API
+    # default: last_shown.
+    # @param max_results [Integer] Ads to collect, 1-1000. Pages of up to 100 are fetched as
+    # needed; each page is billed one unit. API default: 100.
+    # @param page_token [String] Continue a previous call: its `nextPageToken`.
+    # @param include_details [Boolean] Add `details` per ad: regions shown with first/last date
+    # (plus impressions per platform for EU regions), EU reach, disclosed targeting and all
+    # preview variations. One unit per ad, for up to 300 ads per call. API default: false.
+    # @param include_preview [Boolean] Add `preview` per ad: what it shows - headline,
+    # description and display URL of text ads, product title and merchant of shopping ads, image
+    # URLs, the YouTube video of video ads. One unit per ad that has a preview script, for up to
+    # 40 ads per call. Search text ads often exist only as an image (`imageUrl`). API default:
+    # false.
+    # Calls POST /ads/google-ads-transparency.
+    def google_ads_transparency(advertiser: nil, domain: nil, region: nil, platform: nil, format: nil, date_from: nil, date_to: nil, sort: nil, max_results: nil, page_token: nil, include_details: nil, include_preview: nil)
+      post_json("/ads/google-ads-transparency", {
+        advertiser: advertiser,
+        domain: domain,
+        region: region,
+        platform: platform,
+        format: format,
+        date_from: date_from,
+        date_to: date_to,
+        sort: sort,
+        max_results: max_results,
+        page_token: page_token,
+        include_details: include_details,
+        include_preview: include_preview,
+      })
+    end
+
+    # Look up Google advertisers (Ads Transparency Center).
+    #
+    # Finds advertisers on the Google Ads Transparency Center by name: `advertisers`
+    # (`advertiserId` to use with /ads/google-ads-transparency, `name`, `country`,
+    # `creativesMin`/`creativesMax` - how many ads they ran - and `verified`) and matching
+    # website `domains`. One unit per call.
+    #
+    # @param q [String] Advertiser name or brand to look up, e.g. 'nike'.
+    # @param region [String] Count ads shown in these regions only: a 2-letter country code, a
+    # comma list, or 'anywhere' (default).
+    # @param max_results [Integer] Most advertisers (and domains) to return, 1-50. API default:
+    # 10.
+    # Calls POST /ads/google-ads-transparency-advertisers.
+    def google_ads_transparency_advertisers(q, region: nil, max_results: nil)
+      post_json("/ads/google-ads-transparency-advertisers", {
+        q: q,
+        region: region,
+        max_results: max_results,
       })
     end
 
@@ -2575,6 +3125,68 @@ module ScrapeUnblocker
       })
     end
 
+    # Scrape Upwork job posts.
+    #
+    # Searches Upwork jobs for `q` (or lists the newest jobs without it) and returns `jobs`:
+    # `id`, `ciphertext`, `url`, `title`, `description` (full text), `publishedAt`, `createdAt`,
+    # `renewedAt`, `jobType` (hourly / fixed), `hourlyMin`, `hourlyMax`, `budget` (fixed price),
+    # `currency`, `experienceLevel`, `duration`, `workload`, `skills`, plus `totalResults` and
+    # `nextStart`. Filter with `job_type`, `experience`, `budget`, `hourly_rate`,
+    # `client_hires`, `workload`, `duration`, `location`, `category`, `contract_to_hire`; sort
+    # by `relevance` or `recency`. `details=true` adds, per job: `proposals`, `interviewing`,
+    # `invitesSent`, `hired`, `positionsToHire`, `lastClientActivity`, `category`,
+    # `qualifications` and `client` (`country`, `city`, `timezone`, `paymentVerified`, `rating`,
+    # `reviews`, `totalSpent`, `hires`, `memberSince`; no client names). A private listing is
+    # marked `privateListing: true` without those fields. Upwork shows signed-out visitors the
+    # first 5000 results of a search. Billing: one unit per results page of up to 50 jobs, plus
+    # one per job page fetched with `details=true` (`callUnits`).
+    #
+    # @param q [String] What to search for, e.g. 'python' or 'logo design'. Leave empty with
+    # sort=recency for the newest jobs.
+    # @param job_type [String] hourly or fixed.
+    # @param experience [String] Experience level, comma list of: entry, intermediate, expert.
+    # @param budget [String] Fixed-price budget in USD, comma list of ranges like '100-499',
+    # '1000-4999' or '5000-'.
+    # @param hourly_rate [String] Hourly rate in USD, e.g. '25-50' or '40-'.
+    # @param client_hires [String] Client's past hires, comma list of: 0, 1-9, 10-.
+    # @param workload [String] part_time (under 30 hrs/week) or full_time.
+    # @param duration [String] Project length, comma list of: week, month, semester, ongoing
+    # (under a month, 1-3 months, 3-6 months, over 6 months).
+    # @param location [String] Client location, comma list of regions or countries as Upwork
+    # names them, e.g. 'Europe' or 'United States'.
+    # @param category [String] Job category, comma list of names (Accounting & Consulting, Admin
+    # Support, Customer Service, Data Science & Analytics, Design & Creative, Engineering &
+    # Architecture, It & Networking, Legal, Sales & Marketing, Translation, Web, Mobile &
+    # Software Dev, Writing) or category ids.
+    # @param contract_to_hire [Boolean] Only contract-to-hire jobs. API default: false.
+    # @param sort [String] relevance (default with q) or recency (default without q).
+    # @param start [Integer] 0-based position of the first job, 0-4999 (Upwork shows signed-out
+    # visitors the first 5000 results); `nextStart` continues. API default: 0.
+    # @param max_results [Integer] Jobs to collect, 1-5000. Each results page (up to 50 jobs) is
+    # billed one unit. API default: 50.
+    # @param details [Boolean] Add each job's page: proposals, client stats, qualifications. Up
+    # to 100 jobs; one more unit per job page fetched. API default: false.
+    # Calls POST /jobs/upwork.
+    def upwork_jobs(q = nil, job_type: nil, experience: nil, budget: nil, hourly_rate: nil, client_hires: nil, workload: nil, duration: nil, location: nil, category: nil, contract_to_hire: nil, sort: nil, start: nil, max_results: nil, details: nil)
+      post_json("/jobs/upwork", {
+        q: q,
+        job_type: job_type,
+        experience: experience,
+        budget: budget,
+        hourly_rate: hourly_rate,
+        client_hires: client_hires,
+        workload: workload,
+        duration: duration,
+        location: location,
+        category: category,
+        contract_to_hire: contract_to_hire,
+        sort: sort,
+        start: start,
+        max_results: max_results,
+        details: details,
+      })
+    end
+
     # Scrape Trustpilot company reviews.
     #
     # Returns a company's Trustpilot profile and reviews as JSON. `company` is the reviewed
@@ -3313,7 +3925,7 @@ module ScrapeUnblocker
     # @param video [String] Video id (dQw4w9WgXcQ) or any YouTube video URL.
     # @param lang [String] Preferred caption language code, e.g. 'en'. Omit for the
     # default/first track. A prefix like 'en' matches 'en-US'.
-    # @param format [String] Output shape: segments, text. 'segments' returns timestamps; 'text'
+    # @param format [String] Output shape: text, segments. 'segments' returns timestamps; 'text'
     # returns only the joined plaintext. API default: segments.
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE') for the watch page. Defaults to US.
