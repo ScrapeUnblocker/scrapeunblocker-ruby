@@ -75,6 +75,35 @@ module ScrapeUnblocker
       body
     end
 
+    # Fetch a URL and return the rendered page as clean Markdown (a UTF-8 String).
+    #
+    # Built for LLMs, agents and RAG pipelines. The page is rendered in a real
+    # browser behind the same anti-bot bypass chain as #get_page_source, then
+    # converted to Markdown: headings, lists, tables, absolute links, images with
+    # their alt text and code blocks, without scripts, styles, navigation,
+    # footers, forms or hidden elements. Billed like an HTML call.
+    #
+    # +main_content_only+ (default true) keeps only the page's main content,
+    # without navigation, the site header, footer and sidebars; pass false to
+    # convert the whole page. +proxy_country+, +time_sleep+, +method+, +value+,
+    # +method_timeout+ and +steps+ work as in #get_page_source.
+    #
+    # When the target page itself answers 404 or 410 this raises
+    # ScrapeUnblocker::TargetNotFoundError (billed; the not-found page, as
+    # Markdown, is on #html).
+    def get_markdown(url, main_content_only: true, proxy_country: nil, time_sleep: nil, method: nil, value: nil,
+                     method_timeout: nil, steps: nil)
+      body = request("/getPageSource",
+                     url: url, markdown: true,
+                     main_content_only: (main_content_only == false ? false : nil),
+                     proxy_country: proxy_country, time_sleep: time_sleep,
+                     method: method, value: value, method_timeout: method_timeout,
+                     steps: (steps ? JSON.generate(steps) : nil))[:body]
+      # The API always sends Markdown as UTF-8; Net::HTTP hands the body over
+      # as binary, which breaks string operations on non-ASCII text.
+      body.dup.force_encoding(Encoding::UTF_8)
+    end
+
     # Fetch a URL and return structured JSON instead of HTML.
     #
     # A page that rendered but held no structured data comes back as a

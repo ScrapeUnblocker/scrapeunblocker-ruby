@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.0 (2026-10-23)
+
+- New `get_markdown(url, main_content_only: true, ...)` returns the rendered page as clean Markdown for LLMs, agents and RAG pipelines: headings, lists, tables, absolute links, images with their alt text and code blocks, without scripts, styles, navigation, footers, forms or hidden elements. It sends `markdown=true` to `/getPageSource`, is billed like an HTML call, and returns a UTF-8 `String`.
+- `main_content_only:` (default `true`) keeps only the page's main content, without navigation, site header, footer and sidebars; pass `false` to convert the whole page. The method also takes `proxy_country:`, `time_sleep:`, `method:`, `value:`, `method_timeout:` and `steps:`, like `get_page_source`.
+- A target page that answers 404 or 410 raises `TargetNotFoundError`, as with `get_page_source`; the not-found page, as Markdown, is on `#html`.
+
+No breaking changes.
+
 ## 0.12.0 (2026-10-15)
 
 - `google_images` takes `time_range:` (`"hour"`, `"day"`, `"week"`, `"month"` or `"year"`) to return only the images Google found in that recent period, so a query scanned on a schedule returns only what is new. For a fixed window pass `date_from:` and/or `date_to:` (`"YYYY-MM-DD"`) instead; the API answers 400 when `time_range` is combined with either.

@@ -91,6 +91,68 @@ class ClientTest < Minitest::Test
     assert_equal body, err.body
   end
 
+  MARKDOWN = "# A Light in the Attic\n\n| Price | £51.77 |\n| --- | --- |\n"
+
+  def markdown_query(url)
+    URI.decode_www_form(URI.parse(url).query).to_h
+  end
+
+  def test_get_markdown_sends_markdown_and_returns_the_text
+    # Net::HTTP hands the body over as binary; the client returns it as UTF-8.
+    client = make_client([{ status: 200, body: MARKDOWN.b,
+                            headers: { "content-type" => "text/markdown; charset=utf-8" } }])
+    out = client.get_markdown("https://example.com/book", proxy_country: "US")
+
+    assert_equal MARKDOWN, out
+    assert_equal Encoding::UTF_8, out.encoding
+    assert_equal "/getPageSource", URI.parse(@urls[0]).path
+    query = markdown_query(@urls[0])
+    assert_equal "https://example.com/book", query["url"]
+    assert_equal "true", query["markdown"]
+    assert_equal "US", query["proxy_country"]
+    # The API keeps only the main content by default, so true is never sent.
+    refute query.key?("main_content_only")
+    # The other response formats cannot be combined with markdown.
+    %w[parsed_data get_cookies list_elements].each { |other| refute query.key?(other) }
+    assert_equal "test-key", @last_headers["x-scrapeunblocker-key"]
+  end
+
+  def test_get_markdown_sends_main_content_only_false_only_when_false
+    client = make_client(Array.new(3) { { status: 200, body: "# x" } })
+    client.get_markdown("https://example.com", main_content_only: false)
+    client.get_markdown("https://example.com", main_content_only: true)
+    client.get_markdown("https://example.com", main_content_only: nil)
+    first, second, third = @urls.map { |url| markdown_query(url) }
+
+    assert_equal "true", first["markdown"]
+    assert_equal "false", first["main_content_only"]
+    refute second.key?("main_content_only")
+    refute third.key?("main_content_only")
+  end
+
+  def test_get_markdown_passes_render_options_and_steps
+    client = make_client([{ status: 200, body: "# x" }])
+    steps = [{ "action" => "click", "selector" => "#more" }]
+    client.get_markdown("https://example.com", time_sleep: 2, method: "css", value: ".content",
+                                               method_timeout: 10, steps: steps)
+    query = markdown_query(@urls[0])
+
+    assert_equal "2", query["time_sleep"]
+    assert_equal "css", query["method"]
+    assert_equal ".content", query["value"]
+    assert_equal "10", query["method_timeout"]
+    assert_equal steps, JSON.parse(query["steps"])
+  end
+
+  def test_get_markdown_target_not_found_carries_the_markdown_page
+    client = make_client([{ status: 404, body: "# Not Found", headers: { "X-Origin-Status" => "404" } }])
+    err = assert_raises(ScrapeUnblocker::TargetNotFoundError) { client.get_markdown("https://example.com/gone") }
+
+    assert_equal 404, err.origin_status
+    assert_equal "# Not Found", err.html
+    assert_equal 1, @urls.length
+  end
+
   def test_get_parsed_returns_parsed_page
     payload = { "data" => { "page_type" => "product", "source" => "schema.org", "data" => { "price" => 10 } } }
     client = make_client([{ status: 200, body: JSON.generate(payload) }])
