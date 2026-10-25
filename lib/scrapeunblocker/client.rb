@@ -129,6 +129,7 @@ module ScrapeUnblocker
     end
 
     # Run a Google search and return the parsed SERP as a Hash.
+    # +captcha_pause+ is kept for compatibility; the API ignores it.
     def serp(keyword, proxy_country: nil, pages_to_check: 1, wait_after_load: 0, captcha_pause: 0)
       post_json("/serpApi",
                 keyword: keyword, proxy_country: proxy_country,
