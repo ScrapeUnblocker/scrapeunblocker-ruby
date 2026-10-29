@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.17.0 (2026-10-30)
+
+- 29 new plugin methods on `Client`:
+  - E-commerce, new sites: `mediamarkt_search(query)` and `mediamarkt_product(product_id)` (MediaMarkt in ten countries and Saturn), `cdiscount_search(query)` and `cdiscount_product(sku)`, `idealo_search(query)` and `idealo_offers(product_id)` (price comparison in six countries), `rakuten_search(query)` and `rakuten_product()` (Rakuten Ichiba, Japan), `indiamart_search(query)` and `indiamart_product()`, `bedbathandbeyond_search(query)` and `bedbathandbeyond_product(product)`, `petco_search(query)` and `petco_product(product)`, `neobits_product(product)`, `lowes_search(query)` and `lowes_product(product_id)`, `menards_search(query)` and `menards_product()`, `grainger_search(query)` and `grainger_product(sku)`.
+  - Product pages next to existing searches: `walmart_product()`, `ebay_product()`, `etsy_product()`, `bestbuy_product(sku)`, `target_category(category)` and `target_product(tcin)`, `aliexpress_product(product_id)`.
+  - AI: `chatgpt(prompt)` (ChatGPT's answer with the sites it cites).
+- The first argument of the product methods that also take a link, and of the searches that also take a search link, is optional, for calls that pass `url:` instead. `rakuten_product`, `indiamart_product`, `menards_product`, `walmart_product`, `ebay_product` and `etsy_product` take keyword options only (`product_id:` / `sku:` / `item_id:` / `listing_id:` or `url:`).
+- Plugin method comments no longer describe exit or proxy details (`exitProvider`); API responses no longer carry them.
+
+No breaking changes.
+
 ## 0.16.0 (2026-10-29)
 
 - Add `maps_reviews`: Google Maps reviews of a place in Google's sort orders (relevant, newest, highest, lowest) with exact ISO dates, original and translated text, authors, photos, owner replies and page tokens. `POST /maps/reviews`.
