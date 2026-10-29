@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.15.0 (2026-10-29)
+
+- 23 new plugin methods on `Client`:
+  - Groceries: `kroger_search(query)` and `kroger_product(product)` (Kroger and its 18 banner stores such as Ralphs and Fred Meyer, priced for one store), `instacart_search(query, retailer: ...)` and `instacart_product(product)` (any retailer on Instacart, priced for a ZIP code), `publix_search(query)` and `publix_product(product)`.
+  - E-commerce: `amazon_offers` (every seller's offer for a product, by `asin:` or `url:`), `amazon_seller` (a seller's public profile and feedback, by `seller_id:` or `url:`), `costco_search(query)` and `costco_product(product)`, `flipkart_search(query)` and `flipkart_product(product_id)`, `lazada_search(query)` and `lazada_product(item_id)` (six markets, `country:`), `allegro_search(query)` and `allegro_product(offer_id)`, `falabella_search(query)` and `falabella_product` (Chile, Colombia and Peru), `magazineluiza_search(query)` and `magazineluiza_product`.
+  - Google: `google_ai_mode(q)` (the AI Mode answer with the pages it cites) and `google_lens(url)` (Google Lens visual matches for an image URL).
+  - AI: `gemini(prompt)` (Google Gemini's answer with its citations and sources).
+- The first argument of `flipkart_product`, `lazada_product`, `allegro_product`, `falabella_search` and `magazineluiza_search` is optional, for calls that pass `url:` instead. `falabella_product` and `magazineluiza_product` take `product_id:` or `url:`.
+- `instacart_search` needs `retailer:` (the retailer's Instacart slug, e.g. `"costco"`); the API answers 400 without it. `instacart_product` takes it too, unless `product` is a link that names the retailer.
+- `shein_search` docs: results also carry `reviewCountText`, and the price filters apply to `price`.
+
+No breaking changes.
+
 ## 0.14.1 (2026-10-25)
 
 - `serp(captcha_pause:)` docs: the API ignores `captcha_pause`; it is kept for compatibility. CAPTCHAs are handled server-side by retrying from other exits.
