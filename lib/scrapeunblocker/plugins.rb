@@ -2638,6 +2638,51 @@ module ScrapeUnblocker
       })
     end
 
+    # Scrape Google Maps reviews.
+    #
+    # Returns one Google Maps place's reviews as JSON, sorted the way Google sorts them:
+    # `relevant`, `newest`, `highest` or `lowest`. Each review has `rating` (1-5), `date` (exact
+    # ISO 8601, UTC) + `timestamp`, `relativeDate`, `text` (original) + `language`,
+    # `translatedText` (into `hl`, when the review is in another language), `author`, `photos`,
+    # `details` (guided answers such as 'Rooms: 5'), `ownerResponse` and `reviewUrl`. The answer
+    # also carries a `place` summary and `nextPageToken` for paging. Identify the place with
+    # `feature_id` (0xHEX:0xHEX), `place_id` (ChIJ...) or a Maps `url`. Reviews come in pages of
+    # 20; each page fetched is one billed unit.
+    #
+    # @param url [String] A Google Maps place URL (share link or /maps/place/... URL). The
+    # feature id or place_id is read out of it.
+    # @param place_id [String] A Google place_id, e.g. 'ChIJN1t_tDeuEmsRUsoyG83frY4'.
+    # @param feature_id [String] A Maps feature id '0xHEX:0xHEX', e.g.
+    # '0x4776901a5d4813b3:0x2a497c8b414893c'. Fastest - no resolve step.
+    # @param sort [String] Review order: 'relevant' (Google's default), 'newest', 'highest' or
+    # 'lowest'. SerpApi's 'qualityScore', 'newestFirst', 'ratingHigh' and 'ratingLow' are
+    # accepted too. API default: relevant.
+    # @param max_reviews [Integer] How many reviews to return, 1-200. Reviews come in pages of
+    # 20; each page fetched is one billed unit. API default: 20.
+    # @param next_page_token [String] Continue from a previous answer's `nextPageToken` (same
+    # place and sort). When `max_reviews` is not a multiple of 20 the next page can repeat a few
+    # reviews - dedupe on `reviewId`.
+    # @param hl [String] Language for Google's labels and the review translation
+    # (`translatedText`), e.g. 'en', 'de'. The original text is always returned in `text`. API
+    # default: en.
+    # @param gl [String] Google country, ISO-2 lowercase, e.g. 'us'. API default: us.
+    # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
+    # 'DE'). Reviews are the same from any country. API default: us.
+    # Calls POST /maps/reviews.
+    def maps_reviews(url: nil, place_id: nil, feature_id: nil, sort: nil, max_reviews: nil, next_page_token: nil, hl: nil, gl: nil, proxy_country: nil)
+      post_json("/maps/reviews", {
+        url: url,
+        place_id: place_id,
+        feature_id: feature_id,
+        sort: sort,
+        max_reviews: max_reviews,
+        next_page_token: next_page_token,
+        hl: hl,
+        gl: gl,
+        proxy_country: proxy_country,
+      })
+    end
+
     # Scrape Google Hotels search results (prices, ratings, amenities).
     #
     # Runs a Google Hotels search for `q` and returns the properties as JSON: `name`, `type`
@@ -4744,7 +4789,7 @@ module ScrapeUnblocker
     # @param video [String] Video id (dQw4w9WgXcQ) or any YouTube video URL.
     # @param lang [String] Preferred caption language code, e.g. 'en'. Omit for the
     # default/first track. A prefix like 'en' matches 'en-US'.
-    # @param format [String] Output shape: segments, text. 'segments' returns timestamps; 'text'
+    # @param format [String] Output shape: text, segments. 'segments' returns timestamps; 'text'
     # returns only the joined plaintext. API default: segments.
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE') for the watch page. Defaults to US.
