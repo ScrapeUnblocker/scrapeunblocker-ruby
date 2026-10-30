@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.17.1 (2026-10-30)
+
+- 2 new plugin methods on `Client`: `bodegaaurrera_search(query)` and `bodegaaurrera_product` (Bodega Aurrera, Walmart de Mexico's discount chain; prices in MXN). The search's first argument is optional for calls that pass `url:` instead; the product method takes `product_id:` or `url:`.
+
+No breaking changes.
+
 ## 0.17.0 (2026-10-30)
 
 - 29 new plugin methods on `Client`:

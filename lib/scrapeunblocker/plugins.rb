@@ -2948,6 +2948,64 @@ module ScrapeUnblocker
       })
     end
 
+    # Scrape Bodega Aurrera (Mexico) product search.
+    #
+    # Searches Bodega Aurrera (bodegaaurrera.com.mx, Walmart de Mexico) for `query` and returns
+    # `products`, each with `position`, `productId`, `name`, `brand`, `url`, `price` (MXN),
+    # `wasPrice` and `savings` (only on a promotion), `unitPrice`, `priceRange`, `rating`,
+    # `reviewCount`, `availability` / `availabilityText` / `inStock`, `seller` / `sellerType`,
+    # `salesUnit`, `department`, `category` (path), `badges`, `fulfillment` (pickup / delivery
+    # labels), `sponsored` and `image`. Also `totalResults`, `storeId` (the store the prices and
+    # availability are for: the one the storefront assigns a new visitor - a store or postal
+    # code cannot be chosen) and `nextPage`. Sort with `sort` (relevance, price_low,
+    # price_high), start at `page` and collect up to `max_results` across pages (about 40 per
+    # page, each page billed as one request, see `pagesFetched`). `url` takes a Bodega Aurrera
+    # search link instead of `query`. A results page usually takes 1-3 s; a page that has to be
+    # rendered in a browser takes 20-60 s.
+    #
+    # @param query [String] What to search, e.g. 'leche', 'arroz', 'detergente' or 'pañales'.
+    # @param sort [String] Order: relevance, price_low, price_high. API default: relevance.
+    # @param page [Integer] 1-based results page to start from (1-25). API default: 1.
+    # @param max_results [Integer] Products to collect across pages (1-220); about 44 per page,
+    # and each page read is billed as one request. API default: 44.
+    # @param url [String] Instead of `query`: a Bodega Aurrera search link, e.g.
+    # https://www.bodegaaurrera.com.mx/search?q=leche (its sort and page are used).
+    # Calls POST /groceries/bodegaaurrera-search.
+    def bodegaaurrera_search(query = nil, sort: nil, page: nil, max_results: nil, url: nil)
+      post_json("/groceries/bodegaaurrera-search", {
+        query: query,
+        sort: sort,
+        page: page,
+        max_results: max_results,
+        url: url,
+      })
+    end
+
+    # Scrape one Bodega Aurrera (Mexico) product.
+    #
+    # Fetches one Bodega Aurrera product (by `product_id` or `url`) and returns it as JSON:
+    # `productId`, `name`, `brand`, `url`, `upc`, `model`, `price` (MXN), `wasPrice` / `savings`
+    # (only on a promotion), `unitPrice`, `installments`, `availability` / `availabilityText` /
+    # `inStock`, `orderLimit`, `orderMinimum`, `salesUnit`, `seller` / `sellerId` /
+    # `sellerType`, `rating`, `reviewCount`, `ratingBreakdown` (1-5 stars), `category` (path),
+    # `productType`, `shortDescription`, `description`, `ingredients`, `specifications` (name /
+    # value), `badges`, `fulfillment` (pickup / delivery messages), `fulfillmentOptions`,
+    # `store` (the store the price and availability are for - the one the storefront assigns a
+    # new visitor) and `image` / `images`. A call usually takes 1-3 s, or 20-60 s when the page
+    # has to be rendered in a browser. Companion to `/groceries/bodegaaurrera-search`.
+    #
+    # @param product_id [String] Bodega Aurrera item id, e.g. '00750649502153' (the number at
+    # the end of an /ip/ link; search results give it as `productId`).
+    # @param url [String] Instead of `product_id`: a Bodega Aurrera product link, e.g.
+    # https://www.bodegaaurrera.com.mx/ip/leche-great-value-entera-1-l/00750649502153.
+    # Calls POST /groceries/bodegaaurrera-product.
+    def bodegaaurrera_product(product_id: nil, url: nil)
+      post_json("/groceries/bodegaaurrera-product", {
+        product_id: product_id,
+        url: url,
+      })
+    end
+
     # Smyths Toys UK product stock, price, details and listings.
     #
     # Smyths Toys UK (smythstoys.com) as JSON, in four modes. `mode=product` (the default when
@@ -5731,7 +5789,7 @@ module ScrapeUnblocker
     # @param video [String] Video id (dQw4w9WgXcQ) or any YouTube video URL.
     # @param lang [String] Preferred caption language code, e.g. 'en'. Omit for the
     # default/first track. A prefix like 'en' matches 'en-US'.
-    # @param format [String] Output shape: segments, text. 'segments' returns timestamps; 'text'
+    # @param format [String] Output shape: text, segments. 'segments' returns timestamps; 'text'
     # returns only the joined plaintext. API default: segments.
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE') for the watch page. Defaults to US.
