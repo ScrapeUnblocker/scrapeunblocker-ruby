@@ -5789,7 +5789,7 @@ module ScrapeUnblocker
     # @param video [String] Video id (dQw4w9WgXcQ) or any YouTube video URL.
     # @param lang [String] Preferred caption language code, e.g. 'en'. Omit for the
     # default/first track. A prefix like 'en' matches 'en-US'.
-    # @param format [String] Output shape: text, segments. 'segments' returns timestamps; 'text'
+    # @param format [String] Output shape: segments, text. 'segments' returns timestamps; 'text'
     # returns only the joined plaintext. API default: segments.
     # @param proxy_country [String] Proxy country the request is sent from (ISO-2, e.g. 'US',
     # 'DE') for the watch page. Defaults to US.
@@ -6015,6 +6015,212 @@ module ScrapeUnblocker
         offset: offset,
         max_results: max_results,
         proxy_country: proxy_country,
+      })
+    end
+
+    # SofaScore matches of a sport on a day, or live now.
+    #
+    # Lists a sport's matches from sofascore.com for one day in your time zone (or `live=true`
+    # for those in progress), biggest competitions first, as JSON: `id`, `url`, `tournament`
+    # (id, name, url, category / country, stage), `season`, `round`, `status` (type notstarted,
+    # inprogress, finished, postponed, canceled, with its description such as '2nd half'),
+    # `startTime` (ISO, UTC) and `startTimestamp`, `homeTeam` / `awayTeam` (id, name, short
+    # name, code, country, url), `homeScore` / `awayScore` (current plus per-period and normal-
+    # time scores), `winner`, red cards, seeds and first server (tennis), venue and referee when
+    # known. Narrow with `country` (a country or category) or `tournament` (id, link or name),
+    # and `status`. Pass a match `id` to `/sports/sofascore-match` for its stats and lineups.
+    # Motorsport and cycling are races, not matches, and have no day list.
+    #
+    # @param sport [String] The sport: football, basketball, tennis, ice-hockey, american-
+    # football, baseball, handball, volleyball, cricket, rugby, futsal, table-tennis, esports,
+    # darts, snooker, mma, aussie-rules, waterpolo, floorball, bandy, badminton, beach-volley,
+    # minifootball, padel, motorsport, cycling (soccer, hockey, nba, nfl and the like are
+    # accepted). API default: football.
+    # @param date [String] Day as YYYY-MM-DD, or today / yesterday / tomorrow (in `timezone`).
+    # Default today.
+    # @param timezone [String] Time zone the day is read in: an IANA name ('Europe/London',
+    # 'America/New_York') or a UTC offset ('+02:00'). Default UTC.
+    # @param live [Boolean] true for the matches in progress right now (date is then ignored).
+    # API default: false.
+    # @param status [String] Keep only: all, live, upcoming, finished. API default: all.
+    # @param country [String] Only one country or category, by name, slug, ISO code or id:
+    # 'england', 'Spain', 'US', and for tennis 'ATP', 'WTA'.
+    # @param tournament [String] Only one competition: an id, a sofascore.com tournament link or
+    # a name such as 'Premier League' or 'NBA'.
+    # @param max_results [Integer] Matches to return (1-500), the biggest competitions first.
+    # API default: 100.
+    # Calls POST /sports/sofascore-events.
+    def sofascore_events(sport: nil, date: nil, timezone: nil, live: nil, status: nil, country: nil, tournament: nil, max_results: nil)
+      post_json("/sports/sofascore-events", {
+        sport: sport,
+        date: date,
+        timezone: timezone,
+        live: live,
+        status: status,
+        country: country,
+        tournament: tournament,
+        max_results: max_results,
+      })
+    end
+
+    # One SofaScore match with stats, lineups and incidents.
+    #
+    # Fetches one match from sofascore.com: `event` (teams, score by period, status, start time,
+    # tournament, season, round, venue, referee) plus the `include` sections: `statistics` (per
+    # period and group, e.g. possession, expected goals, shots, with home / away text and
+    # numbers), `lineups` (formation, every player with position, shirt number, rating and match
+    # statistics, missing players), `incidents` (goals, cards, substitutions, VAR, periods,
+    # oldest first), `h2h` (team and manager records plus the last 10 meetings), `odds` (markets
+    # with decimal and fractional odds), `momentum`, `pregame_form`, `votes`, `managers`,
+    # `best_players` (player of the match and best rated per side), `shotmap` (every shot with
+    # xG, xGOT, body part and coordinates), `commentary` and `highlights`. Sections the site
+    # does not have for the match (e.g. statistics before kick-off) are named in `unavailable`.
+    #
+    # @param match [String] The match: its id (e.g. 16363904, from the search or events
+    # endpoints) or a sofascore.com match link. A link without '#id:' names the pairing; the
+    # match in progress, else the next, else the latest is used.
+    # @param include [String, Array<String>] Sections to add, comma separated: statistics,
+    # lineups, incidents, h2h, odds, momentum, pregame_form, votes, managers, best_players,
+    # shotmap, commentary, highlights (or all / none). Default statistics,lineups,incidents.
+    # Calls POST /sports/sofascore-match.
+    def sofascore_match(match, include: nil)
+      post_json("/sports/sofascore-match", {
+        match: match,
+        include: plugin_join(include, ","),
+      })
+    end
+
+    # Search SofaScore teams, players, tournaments and matches.
+    #
+    # Searches sofascore.com for `query` and returns the matches as JSON, best first. Each
+    # result has `rank` (its place in the list), `type` (team, player, tournament, match,
+    # manager, referee or venue), `id`, `name`, `slug`, a sofascore.com `url`, `sport`,
+    # `country` and `followers`; a player adds `position`, `jerseyNumber` and its `team`, a
+    # tournament its `category`, a match the same fields as `/sports/sofascore-events`. `sport`
+    # keeps to one sport, `type` to one kind of result. Feed an `id` to `/sports/sofascore-
+    # team`, `-player`, `-tournament` or `-match`.
+    #
+    # @param query [String] What to look for: a team, player, competition, match, manager,
+    # referee or venue name, e.g. 'real madrid', 'sinner', 'premier league', 'arsenal chelsea'.
+    # @param sport [String] The sport: football, basketball, tennis, ice-hockey, american-
+    # football, baseball, handball, volleyball, cricket, rugby, futsal, table-tennis, esports,
+    # darts, snooker, mma, aussie-rules, waterpolo, floorball, bandy, badminton, beach-volley,
+    # minifootball, padel, motorsport, cycling (soccer, hockey, nba, nfl and the like are
+    # accepted). Optional; narrows the search or name lookup to one sport.
+    # @param type [String] Kind of result: all, teams, players, tournaments, matches, managers,
+    # referees, venues (all mixes them, best match first). API default: all.
+    # @param page [Integer] 1-based results page to start from (1-5); the site serves 20 per
+    # page. API default: 1.
+    # @param max_results [Integer] Results to collect across pages (1-100). API default: 20.
+    # Calls POST /sports/sofascore-search.
+    def sofascore_search(query, sport: nil, type: nil, page: nil, max_results: nil)
+      post_json("/sports/sofascore-search", {
+        query: query,
+        sport: sport,
+        type: type,
+        page: page,
+        max_results: max_results,
+      })
+    end
+
+    # A SofaScore team with matches, squad and transfers.
+    #
+    # Fetches a team from sofascore.com (tennis players and other individual competitors are
+    # teams there too): `team` (name, short name, code, country, category, main tournament,
+    # manager, venue with capacity, foundation date, followers, url) plus the `include`
+    # sections: `last_matches` (most recent first) and `next_matches` (soonest first) in the
+    # events shape, `squad` (players with position, shirt number, birth date, height, foot,
+    # country, market value, contract), `tournaments` the team plays and `transfers` (in and out
+    # with fee and date). `team` takes an id, a link or a name.
+    #
+    # @param team [String] The team (or a tennis player, MMA fighter and other individual
+    # competitors): its id (e.g. 2829), a sofascore.com team link, or a name such as 'Real
+    # Madrid' (best search match).
+    # @param sport [String] The sport: football, basketball, tennis, ice-hockey, american-
+    # football, baseball, handball, volleyball, cricket, rugby, futsal, table-tennis, esports,
+    # darts, snooker, mma, aussie-rules, waterpolo, floorball, bandy, badminton, beach-volley,
+    # minifootball, padel, motorsport, cycling (soccer, hockey, nba, nfl and the like are
+    # accepted). Optional; narrows the search or name lookup to one sport.
+    # @param include [String, Array<String>] Sections to add, comma separated: last_matches,
+    # next_matches, squad, tournaments, transfers (or all / none). Default
+    # last_matches,next_matches.
+    # Calls POST /sports/sofascore-team.
+    def sofascore_team(team, sport: nil, include: nil)
+      post_json("/sports/sofascore-team", {
+        team: team,
+        sport: sport,
+        include: plugin_join(include, ","),
+      })
+    end
+
+    # A SofaScore player with season stats and matches.
+    #
+    # Fetches a player from sofascore.com: `player` (name, team, position and detailed
+    # positions, shirt number, birth date, height, preferred foot, country, market value,
+    # contract end, followers, url) plus the `include` sections: `season_stats` (every statistic
+    # SofaScore keeps for one competition and season, e.g. rating, goals, expected goals,
+    # assists, passes, duels, saves), `seasons` (each competition with its seasons, to pick
+    # `tournament` and `season`), `last_matches` (most recent first, with the player's rating,
+    # minutes and goals or assists in each), `transfers`, `attributes` (attacking, technical,
+    # tactical, defending, creativity scores) and `national_team` (caps, goals, debut). `player`
+    # takes an id, a link or a name.
+    #
+    # @param player [String] The player: id (e.g. 12994), a sofascore.com player link, or a name
+    # such as 'Lionel Messi' (best search match).
+    # @param sport [String] The sport: football, basketball, tennis, ice-hockey, american-
+    # football, baseball, handball, volleyball, cricket, rugby, futsal, table-tennis, esports,
+    # darts, snooker, mma, aussie-rules, waterpolo, floorball, bandy, badminton, beach-volley,
+    # minifootball, padel, motorsport, cycling (soccer, hockey, nba, nfl and the like are
+    # accepted). Optional; narrows the search or name lookup to one sport.
+    # @param include [String, Array<String>] Sections to add, comma separated: seasons,
+    # season_stats, last_matches, transfers, attributes, national_team (or all / none). Default
+    # season_stats,last_matches.
+    # @param tournament [String] For season_stats: the competition id (see the seasons section).
+    # Default the player's first listed competition.
+    # @param season [String] For season_stats: a season id or its year as SofaScore writes it
+    # ('26/27', '2026'). Default the latest.
+    # Calls POST /sports/sofascore-player.
+    def sofascore_player(player, sport: nil, include: nil, tournament: nil, season: nil)
+      post_json("/sports/sofascore-player", {
+        player: player,
+        sport: sport,
+        include: plugin_join(include, ","),
+        tournament: tournament,
+        season: season,
+      })
+    end
+
+    # A SofaScore competition with standings and fixtures.
+    #
+    # Fetches a competition and season from sofascore.com: `tournament` (name, category /
+    # country, tier, title holder and record holders, divisions above and below, dates,
+    # followers, url) and `season`, plus the `include` sections: `standings` (every table:
+    # position, team, played, won, drawn, lost, scored, conceded, difference, points, promotion
+    # or relegation note), `rounds`, `last_matches` (most recent first) and `next_matches`
+    # (soonest first) in the events shape, `top_players` and `top_teams` (the top 10 in each
+    # statistic, e.g. rating, goals, assists, expected goals) and `seasons` (every season with
+    # its id). `tournament` takes an id, a link or a name.
+    #
+    # @param tournament [String] The competition: id (e.g. 17), a sofascore.com tournament link
+    # (its '#id:' picks the season), or a name such as 'Premier League' or 'NBA' (best search
+    # match).
+    # @param sport [String] The sport: football, basketball, tennis, ice-hockey, american-
+    # football, baseball, handball, volleyball, cricket, rugby, futsal, table-tennis, esports,
+    # darts, snooker, mma, aussie-rules, waterpolo, floorball, bandy, badminton, beach-volley,
+    # minifootball, padel, motorsport, cycling (soccer, hockey, nba, nfl and the like are
+    # accepted). Optional; narrows the search or name lookup to one sport.
+    # @param season [String] A season id or its year as SofaScore writes it ('26/27', '2026').
+    # Default the current one.
+    # @param include [String, Array<String>] Sections to add, comma separated: seasons,
+    # standings, rounds, last_matches, next_matches, top_players, top_teams (or all / none).
+    # Default standings,last_matches,next_matches.
+    # Calls POST /sports/sofascore-tournament.
+    def sofascore_tournament(tournament, sport: nil, season: nil, include: nil)
+      post_json("/sports/sofascore-tournament", {
+        tournament: tournament,
+        sport: sport,
+        season: season,
+        include: plugin_join(include, ","),
       })
     end
 

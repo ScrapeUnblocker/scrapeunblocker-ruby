@@ -162,6 +162,7 @@ jobs = su.career_site_jobs("https://jobs.ashbyhq.com/ramp", keyword: "engineer")
 | Local & Maps | `yelp_search`, `yelp_business`, `yelp_reviews`, `naver_place_search`, `naver_place_details` |
 | Apps | `google_play_app`, `google_play_search`, `app_store_app`, `app_store_search`, `app_store_reviews` |
 | Video & Music | `youtube_channel`, `youtube_search`, `youtube_transcript`, `spotify_search`, `spotify_artist`, `spotify_album`, `spotify_track`, `spotify_playlist` |
+| Sports | `sofascore_events`, `sofascore_match`, `sofascore_search`, `sofascore_team`, `sofascore_player`, `sofascore_tournament` |
 | SEO & Ads | `similarweb_overview`, `ahrefs`, `semrush_overview`, `meta_ad_library` |
 <!-- plugin-methods:end -->
 
