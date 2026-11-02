@@ -177,6 +177,9 @@ data = su.plugin("/marketplace/target-search", query: "tv", max_results: 24)
 
 ```ruby
 serp = su.serp("web scraping api", pages_to_check: 2, proxy_country: "US")
+serp["organic"].each { |r| puts [r["position"], r["title"], r["url"], r["date"]].join(" ") }
+# The first page's other blocks (empty when Google shows none):
+p serp["peopleAlsoAsk"], serp["relatedSearches"], serp["knowledgeGraph"], serp["topStories"]
 ```
 
 ## Google Local (Maps)

@@ -128,7 +128,13 @@ module ScrapeUnblocker
       PageResult.from_hash(JSON.parse(body))
     end
 
-    # Run a Google search and return the parsed SERP as a Hash.
+    # Run a Google search and return the parsed SERP as a Hash: "organic"
+    # results and "topAds" / "bottomAds" (title, real url, description,
+    # position, displayedUrl, domain; organic adds source and date, ads
+    # advertiser), "aiOverview", "totalResults", and the first page's other
+    # blocks: peopleAlsoAsk, relatedSearches, knowledgeGraph, topStories,
+    # videos, localResults, shoppingResults and spellingCorrection (each empty
+    # or nil when Google shows none).
     # +captcha_pause+ is kept for compatibility; the API ignores it.
     def serp(keyword, proxy_country: nil, pages_to_check: 1, wait_after_load: 0, captcha_pause: 0)
       post_json("/serpApi",

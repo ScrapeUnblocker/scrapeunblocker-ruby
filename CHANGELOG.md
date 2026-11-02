@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.18.1 (2026-11-02)
+
+- `serp` documents the richer Google SERP the API now returns: every organic result (also those without a snippet) with its real URL, `displayedUrl`, `domain`, `source` (site name) and `date`; ads with `displayedUrl`, `domain` and `advertiser`; and the first page's other blocks - `peopleAlsoAsk`, `relatedSearches`, `knowledgeGraph`, `topStories`, `videos`, `localResults`, `shoppingResults` and `spellingCorrection`. No code change: the method returns the API's JSON as it is.
+
+No breaking changes.
+
 ## 0.18.0 (2026-11-02)
 
 - 6 new plugin methods on `Client` for SofaScore (live scores, fixtures, results and stats for 26 sports): `sofascore_events` (a sport's matches on a day in your time zone, or `live: true` for those in progress; `sport` defaults to football), `sofascore_match(match)` (one match with the `include:` sections: statistics, lineups, incidents, head-to-head, odds, momentum, shot map and more), `sofascore_search(query)`, `sofascore_team(team)`, `sofascore_player(player)` and `sofascore_tournament(tournament)`. Teams, players and competitions take an id, a sofascore.com link or a name. `include:` takes a comma-separated string or an array.
