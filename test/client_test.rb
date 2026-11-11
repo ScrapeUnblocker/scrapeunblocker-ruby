@@ -195,6 +195,19 @@ class ClientTest < Minitest::Test
     assert_equal({ "organic" => [] }, out)
     assert_includes @urls[0], "/serpApi"
     assert_includes @urls[0], "pages_to_check=2"
+    refute_includes @urls[0], "full_urls"
+  end
+
+  def test_serp_sends_full_urls_only_when_true
+    body = JSON.generate("organic" => [])
+    client = make_client([{ status: 200, body: body }, { status: 200, body: body }])
+    client.serp("hello world", full_urls: true)
+    client.serp("hello world", full_urls: false)
+
+    first = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+    second = URI.decode_www_form(URI.parse(@urls[1]).query).to_h
+    assert_equal "true", first["full_urls"]
+    refute second.key?("full_urls")
   end
 
   def test_google_local_targets_maps_endpoint

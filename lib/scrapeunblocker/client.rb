@@ -137,12 +137,22 @@ module ScrapeUnblocker
     # localResults, shoppingResults and spellingCorrection (each empty or nil
     # when Google shows none).
     # +captcha_pause+ is kept for compatibility; the API ignores it.
-    def serp(keyword, proxy_country: nil, pages_to_check: 1, wait_after_load: 0, captcha_pause: 0)
+    #
+    # +full_urls+ waits until Google gives out every result's real URL.
+    # Google releases a results page's links a few at a time, the last ones
+    # up to about 40 seconds after the search. Without it the call returns
+    # sooner, and a result whose link has not come yet has the site's home
+    # page as its "url" (or a Google redirect link when Google shows no
+    # site). With it, the call takes up to about 40 seconds longer. Billed
+    # the same.
+    def serp(keyword, proxy_country: nil, pages_to_check: 1, wait_after_load: 0, captcha_pause: 0,
+             full_urls: false)
       post_json("/serpApi",
                 keyword: keyword, proxy_country: proxy_country,
                 pages_to_check: pages_to_check,
                 wait_after_load: (wait_after_load.zero? ? nil : wait_after_load),
-                captcha_pause: (captcha_pause.zero? ? nil : captcha_pause))
+                captcha_pause: (captcha_pause.zero? ? nil : captcha_pause),
+                full_urls: (full_urls ? true : nil))
     end
 
     # Search Google Local (Maps) and return the businesses as a Hash.
