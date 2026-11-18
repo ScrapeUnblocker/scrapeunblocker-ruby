@@ -66,4 +66,67 @@ module ScrapeUnblocker
       )
     end
   end
+
+  # One XHR/fetch response the page received (#get_page_with_xhr).
+  # +status+ is 0 when the request failed without a response; +body+ is nil
+  # when it was not returned, with +body_omitted+ saying why ("binary",
+  # "size_limit", "in_flight", "redirect", "unavailable" or "request_failed").
+  class XhrCall
+    attr_reader :url, :method, :status, :content_type, :body, :body_omitted
+
+    def initialize(url:, method:, status:, content_type: nil, body: nil, body_omitted: nil)
+      @url = url
+      @method = method
+      @status = status
+      @content_type = content_type
+      @body = body
+      @body_omitted = body_omitted
+    end
+
+    def self.from_hash(item)
+      new(
+        url: item["url"].to_s,
+        method: (item["method"] || "GET").to_s,
+        status: item["status"].to_i,
+        content_type: item["content_type"],
+        body: item["body"],
+        body_omitted: item["body_omitted"]
+      )
+    end
+
+    # The body parsed as JSON (raises JSON::ParserError / ArgumentError when it is not).
+    def json
+      raise ArgumentError, "no body (#{body_omitted || 'unavailable'})" if body.nil?
+
+      JSON.parse(body)
+    end
+  end
+
+  # A page plus the XHR/fetch responses it received (#get_page_with_xhr).
+  class CapturedPage
+    attr_reader :html, :xhr, :proxy, :raw
+
+    def initialize(html:, xhr:, xhr_truncated:, proxy:, raw:)
+      @html = html
+      @xhr = xhr
+      @xhr_truncated = xhr_truncated
+      @proxy = proxy
+      @raw = raw
+    end
+
+    # True when more responses matched than were returned.
+    def xhr_truncated?
+      @xhr_truncated
+    end
+
+    def self.from_hash(payload)
+      new(
+        html: payload["html"],
+        xhr: (payload["xhr"] || []).map { |item| XhrCall.from_hash(item) },
+        xhr_truncated: payload["xhr_truncated"] == true,
+        proxy: payload["proxy"],
+        raw: payload
+      )
+    end
+  end
 end

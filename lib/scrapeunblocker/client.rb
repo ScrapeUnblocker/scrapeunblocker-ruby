@@ -128,6 +128,23 @@ module ScrapeUnblocker
       PageResult.from_hash(JSON.parse(body))
     end
 
+    # Fetch a URL and return the page's own XHR/fetch responses with it.
+    #
+    # Many sites render from a JSON API the page calls itself, and that API
+    # often refuses direct requests (the page signs each call). The page is
+    # rendered in a real browser and every XHR/fetch response whose URL
+    # contains +capture_xhr+ (e.g. "/api/search") comes back in the order the
+    # page received it: up to 20 responses and 10 MB of bodies. +steps+ (same
+    # format as #get_page_source) make the page fire the call. Returns a
+    # CapturedPage; a failed step raises ScrapeUnblocker::ValidationError whose
+    # body holds the step_failed JSON, including "xhr".
+    def get_page_with_xhr(url, capture_xhr, steps: nil, proxy_country: nil)
+      body = request("/getPageSource",
+                     url: url, capture_xhr: capture_xhr, proxy_country: proxy_country,
+                     steps: (steps ? JSON.generate(steps) : nil))[:body]
+      CapturedPage.from_hash(JSON.parse(body))
+    end
+
     # Run a Google search and return the parsed SERP as a Hash: "organic"
     # results and "topAds" / "bottomAds" (title, real url, description,
     # position, displayedUrl, domain, favicon, sitelinks; organic adds source,

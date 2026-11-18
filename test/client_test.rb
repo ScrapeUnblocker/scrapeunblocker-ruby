@@ -591,4 +591,34 @@ class ClientTest < Minitest::Test
                  @urls[1]
   end
 
+  def test_get_page_with_xhr_returns_the_captured_calls
+    payload = {
+      html: "<html>results</html>",
+      xhr: [
+        { url: "https://api.example.com/v2/items?page=1", method: "GET", status: 200,
+          content_type: "application/json", body: '{"items":[1,2]}' },
+        { url: "https://api.example.com/v2/items?page=2", method: "GET", status: 403,
+          content_type: nil, body: nil, body_omitted: "binary" }
+      ],
+      xhr_truncated: false,
+      proxy: "us"
+    }
+    client = make_client([{ status: 200, body: JSON.generate(payload) }])
+    steps = [{ action: "click", selector: "#more" }]
+    page = client.get_page_with_xhr("https://example.com/search", "/v2/items", steps: steps, proxy_country: "us")
+
+    assert_equal "<html>results</html>", page.html
+    assert_equal "us", page.proxy
+    refute page.xhr_truncated?
+    assert_equal 2, page.xhr.size
+    assert_equal({ "items" => [1, 2] }, page.xhr[0].json)
+    assert_equal 200, page.xhr[0].status
+    assert_nil page.xhr[1].body
+    assert_equal "binary", page.xhr[1].body_omitted
+    assert_raises(ArgumentError) { page.xhr[1].json }
+    query = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+    assert_equal "/v2/items", query["capture_xhr"]
+    assert_equal JSON.generate(steps), query["steps"]
+    refute query.key?("get_cookies")
+  end
 end
