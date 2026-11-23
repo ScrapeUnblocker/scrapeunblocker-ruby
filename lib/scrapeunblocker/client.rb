@@ -128,6 +128,29 @@ module ScrapeUnblocker
       PageResult.from_hash(JSON.parse(body))
     end
 
+    # Fetch a URL and also return the target's status code, the final URL and
+    # the response headers that served it.
+    #
+    # Returns a PageWithHeaders: +html+, +status_code+ (the target's own
+    # status), +final_url+ (after redirects), +headers+ (the target's response
+    # headers with lowercase names; a header sent more than once is joined with
+    # ", " except "set-cookie", which is always an Array of Strings),
+    # +request_headers+ (the headers sent to the target) and +proxy+ (the
+    # exit's lowercase ISO-2 country). Each of them is nil when the render path
+    # could not observe it. +get_cookies+ also returns the cookies, as
+    # #get_page_with_cookies does; +cookies+ is nil without it.
+    #
+    # A target page that answers 401, 451 or 5xx is returned, with the target's
+    # status on +status_code+. When the target page itself answers 404 or 410
+    # this raises ScrapeUnblocker::TargetNotFoundError (billed; the not-found
+    # page is on #html and the full JSON, headers included, on #body).
+    def get_page_with_headers(url, get_cookies: false, proxy_country: nil, time_sleep: nil)
+      body = request("/getPageSource",
+                     url: url, get_headers: true, get_cookies: (get_cookies ? true : nil),
+                     proxy_country: proxy_country, time_sleep: time_sleep)[:body]
+      PageWithHeaders.from_hash(JSON.parse(body))
+    end
+
     # Fetch a URL and return the page's own XHR/fetch responses with it.
     #
     # Many sites render from a JSON API the page calls itself, and that API

@@ -621,4 +621,86 @@ class ClientTest < Minitest::Test
     assert_equal JSON.generate(steps), query["steps"]
     refute query.key?("get_cookies")
   end
+
+  HEADERS_PAGE = {
+    html: "<!DOCTYPE html><html>hi</html>",
+    status_code: 200,
+    final_url: "https://www.example.com/",
+    headers: { "content-type" => "text/html", "set-cookie" => ["a=1; Path=/", "b=2"],
+               "vary" => "Accept, Cookie" },
+    request_headers: { "user-agent" => "Mozilla/5.0", "accept" => "text/html" },
+    proxy: "us"
+  }.freeze
+
+  def test_get_page_with_headers_returns_status_url_and_headers
+    client = make_client([{ status: 200, body: JSON.generate(HEADERS_PAGE) }])
+    page = client.get_page_with_headers("https://example.com", proxy_country: "US", time_sleep: 2)
+
+    assert_instance_of ScrapeUnblocker::PageWithHeaders, page
+    assert_equal "<!DOCTYPE html><html>hi</html>", page.html
+    assert_equal 200, page.status_code
+    assert_equal "https://www.example.com/", page.final_url
+    assert_equal "text/html", page.headers["content-type"]
+    assert_equal ["a=1; Path=/", "b=2"], page.headers["set-cookie"]
+    assert_equal "Accept, Cookie", page.headers["vary"]
+    assert_equal({ "user-agent" => "Mozilla/5.0", "accept" => "text/html" }, page.request_headers)
+    assert_equal "us", page.proxy
+    assert_nil page.cookies
+    assert_equal JSON.parse(JSON.generate(HEADERS_PAGE)), page.raw
+    assert_equal "/getPageSource", URI.parse(@urls[0]).path
+    query = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+    assert_equal "https://example.com", query["url"]
+    assert_equal "true", query["get_headers"]
+    assert_equal "US", query["proxy_country"]
+    assert_equal "2", query["time_sleep"]
+    %w[get_cookies parsed_data markdown list_elements capture_xhr].each { |other| refute query.key?(other) }
+  end
+
+  def test_get_page_with_headers_sends_get_cookies_only_when_asked
+    cookies = [{ "name" => "a", "value" => "1", "domain" => ".example.com" }]
+    client = make_client([{ status: 200, body: JSON.generate(HEADERS_PAGE.merge(cookies: cookies)) }])
+    page = client.get_page_with_headers("https://example.com", get_cookies: true)
+
+    assert_equal cookies, page.cookies
+    assert_equal ["a=1; Path=/", "b=2"], page.headers["set-cookie"]
+    query = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+    assert_equal "true", query["get_headers"]
+    assert_equal "true", query["get_cookies"]
+  end
+
+  def test_get_page_with_headers_keeps_unobserved_fields_nil
+    payload = { html: "<html>hi</html>", status_code: nil, final_url: nil, headers: nil,
+                request_headers: nil, proxy: nil }
+    client = make_client([{ status: 200, body: JSON.generate(payload) }])
+    page = client.get_page_with_headers("https://example.com")
+
+    assert_equal "<html>hi</html>", page.html
+    assert_nil page.status_code
+    assert_nil page.final_url
+    assert_nil page.headers
+    assert_nil page.request_headers
+    assert_nil page.proxy
+  end
+
+  def test_get_page_with_headers_returns_the_targets_own_error_page
+    # A target's 401/451/5xx page is delivered as HTTP 200; its status is in the JSON.
+    client = make_client([{ status: 200, body: JSON.generate(HEADERS_PAGE.merge(status_code: 503)) }])
+    page = client.get_page_with_headers("https://example.com")
+
+    assert_equal 503, page.status_code
+    assert_equal "<!DOCTYPE html><html>hi</html>", page.html
+  end
+
+  def test_target_not_found_with_headers_exposes_the_html
+    body = JSON.generate(HEADERS_PAGE.merge(html: "<html>gone</html>", status_code: 404))
+    client = make_client([{ status: 404, body: body, headers: { "x-origin-status" => ["404"] } }])
+    err = assert_raises(ScrapeUnblocker::TargetNotFoundError) do
+      client.get_page_with_headers("https://example.com/gone")
+    end
+    assert_equal 404, err.origin_status
+    assert_equal "<html>gone</html>", err.html
+    # The target's headers stay reachable through the raw JSON body.
+    assert_equal ["a=1; Path=/", "b=2"], JSON.parse(err.body)["headers"]["set-cookie"]
+    assert_equal 1, @urls.length
+  end
 end

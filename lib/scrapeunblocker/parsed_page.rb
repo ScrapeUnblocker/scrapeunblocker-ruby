@@ -67,6 +67,38 @@ module ScrapeUnblocker
     end
   end
 
+  # HTML plus the target's status, final URL and headers (#get_page_with_headers).
+  # +headers+ has lowercase names and "set-cookie" as an Array of Strings;
+  # +cookies+ is nil unless the call asked for them. Any field the render path
+  # could not observe is nil.
+  class PageWithHeaders
+    attr_reader :html, :status_code, :final_url, :headers, :request_headers, :proxy, :cookies, :raw
+
+    def initialize(html:, status_code:, final_url:, headers:, request_headers:, proxy:, raw:, cookies: nil)
+      @html = html
+      @status_code = status_code
+      @final_url = final_url
+      @headers = headers
+      @request_headers = request_headers
+      @proxy = proxy
+      @cookies = cookies
+      @raw = raw
+    end
+
+    def self.from_hash(payload)
+      new(
+        html: payload["html"],
+        status_code: payload["status_code"],
+        final_url: payload["final_url"],
+        headers: payload["headers"],
+        request_headers: payload["request_headers"],
+        proxy: payload["proxy"],
+        cookies: payload["cookies"],
+        raw: payload
+      )
+    end
+  end
+
   # One XHR/fetch response the page received (#get_page_with_xhr).
   # +status+ is 0 when the request failed without a response; +body+ is nil
   # when it was not returned, with +body_omitted+ saying why ("binary",

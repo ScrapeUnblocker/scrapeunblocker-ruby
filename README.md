@@ -273,6 +273,29 @@ p page.cookies
 puts page.proxy
 ```
 
+## Status code, final URL and headers
+
+`get_page_with_headers` returns the page together with what the target answered:
+its own status code, the URL after redirects, its response headers and the
+headers that were sent to it.
+
+```ruby
+page = su.get_page_with_headers("https://example.com", proxy_country: "US")
+puts page.status_code              # the target's status, e.g. 200
+puts page.final_url                # after redirects
+puts page.headers["content-type"]
+p page.headers["set-cookie"]       # always an Array of Strings
+p page.request_headers             # what was sent to the target
+puts page.proxy                    # exit country, e.g. "us"
+```
+
+Header names are lowercase; a header sent more than once is joined with `", "`,
+except `set-cookie`, which is always a list. A field the render path could not
+observe is `nil`. Pass `get_cookies: true` to get `page.cookies` in the same call.
+A target page that answers 401, 451 or 5xx comes back as a result with its
+status on `page.status_code`; a 404 or 410 raises `TargetNotFoundError` (see
+[below](#the-target-page-does-not-exist-404--410)).
+
 ## The page's own API calls (XHR/fetch)
 
 Many sites render from a JSON API the page calls itself, and that API often
@@ -377,7 +400,7 @@ end
 
 `TargetNotFoundError` subclasses `NotFoundError`, so `rescue ScrapeUnblocker::NotFoundError` catches it too. A 404 without `X-Origin-Status` is the API's own and stays a plain `NotFoundError`.
 
-With `get_parsed` the body is the parsed-data JSON (`{"data": {"page_type": "not_found", ...}}`), so `html` is `nil` there; the raw JSON is on `#body`. With `get_markdown` the not-found page on `#html` is Markdown.
+With `get_parsed` the body is the parsed-data JSON (`{"data": {"page_type": "not_found", ...}}`), so `html` is `nil` there; the raw JSON is on `#body`. With `get_markdown` the not-found page on `#html` is Markdown. With `get_page_with_headers` the page is on `#html` and the whole JSON, the target's headers included, on `#body`.
 
 ### No structured data on the page
 

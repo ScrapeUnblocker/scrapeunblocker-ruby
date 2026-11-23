@@ -101,10 +101,11 @@ module ScrapeUnblocker
 
   # The target page itself does not exist (HTTP 404 or 410).
   #
-  # Raised by #get_page_source, #get_parsed, #get_page_with_cookies and
-  # #get_image when the site you asked for answered 404 or 410 on its own. The API passes that
-  # status through and marks it with the X-Origin-Status header, which is how
-  # this is told apart from an API-side 404. It is the target's final answer,
+  # Raised by #get_page_source, #get_parsed, #get_page_with_cookies,
+  # #get_page_with_headers and #get_image when the site you asked for
+  # answered 404 or 410 on its own. The API passes that status through and
+  # marks it with the X-Origin-Status header, which is how this is told apart
+  # from an API-side 404. It is the target's final answer,
   # not a block, so it is never retried - and the call is billed, because the
   # page was fetched and delivered.
   #
