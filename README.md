@@ -320,6 +320,36 @@ Each `XhrCall` has `url`, `method`, `status`, `content_type`, `body` (text) and
 matching call with 403 or 429, the request fails like a block and
 is not billed.
 
+## Sticky sessions
+
+Pass `session:` to keep a flow on one IP, the way you would with a sticky proxy
+(a site that ties a cart, a login-free session or a rate limit to the visitor's
+address). Calls with the same session id leave through the same proxy IP while
+the session is in use; it expires after 10 minutes without calls and belongs to
+your API key only. The id is 1-64 letters, digits, `_`, `.` or `-` (anything else
+is a `ValidationError`). It works with every option of the page methods:
+`get_page_source`, `get_markdown`, `get_parsed`, `get_page_with_cookies`,
+`get_page_with_headers` and `get_page_with_xhr`.
+
+```ruby
+first = su.get_page_with_headers("https://example.com/cart", session: "cart-42")
+second = su.get_page_with_headers("https://example.com/checkout", session: "cart-42")
+puts "the session moved to a new IP" if second.session_changed?
+```
+
+When the session's IP cannot get the page, the call is answered through another
+IP, `session_changed` is `true`, and the session moves to the new IP. Up to 4
+calls of one session run on its IP at once; more parallel calls are answered
+through other IPs (also flagged) without moving the session. A call that names a
+different `proxy_country` than the session's gets a new IP in that country
+(flagged).
+
+`session_changed` (or `session_changed?`) is on the result objects of
+`get_parsed`, `get_page_with_cookies`, `get_page_with_headers` and
+`get_page_with_xhr`. `get_page_source` and `get_markdown` return a plain String,
+which cannot carry it: use one of those methods when you need to know whether
+the IP changed.
+
 ## Images
 
 ```ruby

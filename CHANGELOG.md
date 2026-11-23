@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.22.0 (2026-11-23)
+
+- Sticky sessions: `get_page_source`, `get_markdown`, `get_parsed`, `get_page_with_cookies`, `get_page_with_headers` and `get_page_with_xhr` take a new `session:` keyword for the API's `session` parameter. Calls with the same id (1-64 letters, digits, `_`, `.`, `-`) leave through the same proxy IP while the session is in use (it expires after 10 minutes without calls). The parameter is only sent when given.
+- `ParsedPage`, `PageResult`, `PageWithHeaders` and `CapturedPage` have `session_changed` / `session_changed?`: `true` when the API answered with `X-Session-Changed: true`, i.e. the call was answered through another IP than the session's. `get_page_source` and `get_markdown` still return a String; use a result-object method when you need the flag.
+
+No breaking changes.
+
 ## 0.21.0 (2026-11-23)
 
 - New `get_page_with_headers(url, get_cookies:, proxy_country:, time_sleep:)` for the API's `get_headers` parameter. It returns a `PageWithHeaders` with `html`, the target's own `status_code`, the `final_url` after redirects, the target's response `headers` (lowercase names; `set-cookie` is always an Array), the `request_headers` sent to the target, the exit `proxy` country, `cookies` when `get_cookies: true` is passed, and `raw`. A field the render path could not observe is `nil`. A target that answers 404 or 410 raises `TargetNotFoundError`, as the other page methods do.

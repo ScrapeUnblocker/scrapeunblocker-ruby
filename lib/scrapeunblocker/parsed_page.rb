@@ -15,8 +15,15 @@ module ScrapeUnblocker
     attr_reader :html
     # @return [String, nil] the API's explanation when #data_extracted? is false
     attr_reader :detail
+    # @return [Boolean] true when the call named a sticky +session+ and the API
+    #   answered it through another IP than the session's (the
+    #   X-Session-Changed header); the session has then moved to the new IP,
+    #   unless the call ran in parallel over the session's limit
+    attr_reader :session_changed
+    alias session_changed? session_changed
 
-    def initialize(page_type:, source:, data:, raw:, data_extracted: true, html: nil, detail: nil)
+    def initialize(page_type:, source:, data:, raw:, data_extracted: true, html: nil, detail: nil,
+                   session_changed: false)
       @page_type = page_type
       @source = source
       @data = data
@@ -24,6 +31,7 @@ module ScrapeUnblocker
       @data_extracted = data_extracted
       @html = html
       @detail = detail
+      @session_changed = session_changed
     end
 
     # @return [Boolean] false when the page rendered but no structured data
@@ -32,7 +40,7 @@ module ScrapeUnblocker
       @data_extracted
     end
 
-    def self.from_hash(payload)
+    def self.from_hash(payload, session_changed: false)
       inner = payload["data"].is_a?(Hash) ? payload["data"] : payload
       new(
         page_type: inner["page_type"],
@@ -41,7 +49,8 @@ module ScrapeUnblocker
         raw: payload,
         data_extracted: payload["data_extracted"] != false,
         html: payload["html"],
-        detail: payload["detail"]
+        detail: payload["detail"],
+        session_changed: session_changed
       )
     end
   end
@@ -49,20 +58,28 @@ module ScrapeUnblocker
   # HTML plus the cookies and proxy that served it (#get_page_with_cookies).
   class PageResult
     attr_reader :html, :cookies, :proxy, :raw
+    # @return [Boolean] true when the call named a sticky +session+ and the API
+    #   answered it through another IP than the session's (the
+    #   X-Session-Changed header); the session has then moved to the new IP,
+    #   unless the call ran in parallel over the session's limit
+    attr_reader :session_changed
+    alias session_changed? session_changed
 
-    def initialize(html:, cookies:, proxy:, raw:)
+    def initialize(html:, cookies:, proxy:, raw:, session_changed: false)
       @html = html
       @cookies = cookies
       @proxy = proxy
       @raw = raw
+      @session_changed = session_changed
     end
 
-    def self.from_hash(payload)
+    def self.from_hash(payload, session_changed: false)
       new(
         html: payload["html"] || payload["page_source"] || payload["content"],
         cookies: payload["cookies"],
         proxy: payload["proxy"] || payload["proxy_address"],
-        raw: payload
+        raw: payload,
+        session_changed: session_changed
       )
     end
   end
@@ -73,8 +90,15 @@ module ScrapeUnblocker
   # could not observe is nil.
   class PageWithHeaders
     attr_reader :html, :status_code, :final_url, :headers, :request_headers, :proxy, :cookies, :raw
+    # @return [Boolean] true when the call named a sticky +session+ and the API
+    #   answered it through another IP than the session's (the
+    #   X-Session-Changed header); the session has then moved to the new IP,
+    #   unless the call ran in parallel over the session's limit
+    attr_reader :session_changed
+    alias session_changed? session_changed
 
-    def initialize(html:, status_code:, final_url:, headers:, request_headers:, proxy:, raw:, cookies: nil)
+    def initialize(html:, status_code:, final_url:, headers:, request_headers:, proxy:, raw:, cookies: nil,
+                   session_changed: false)
       @html = html
       @status_code = status_code
       @final_url = final_url
@@ -83,9 +107,10 @@ module ScrapeUnblocker
       @proxy = proxy
       @cookies = cookies
       @raw = raw
+      @session_changed = session_changed
     end
 
-    def self.from_hash(payload)
+    def self.from_hash(payload, session_changed: false)
       new(
         html: payload["html"],
         status_code: payload["status_code"],
@@ -94,7 +119,8 @@ module ScrapeUnblocker
         request_headers: payload["request_headers"],
         proxy: payload["proxy"],
         cookies: payload["cookies"],
-        raw: payload
+        raw: payload,
+        session_changed: session_changed
       )
     end
   end
@@ -137,13 +163,20 @@ module ScrapeUnblocker
   # A page plus the XHR/fetch responses it received (#get_page_with_xhr).
   class CapturedPage
     attr_reader :html, :xhr, :proxy, :raw
+    # @return [Boolean] true when the call named a sticky +session+ and the API
+    #   answered it through another IP than the session's (the
+    #   X-Session-Changed header); the session has then moved to the new IP,
+    #   unless the call ran in parallel over the session's limit
+    attr_reader :session_changed
+    alias session_changed? session_changed
 
-    def initialize(html:, xhr:, xhr_truncated:, proxy:, raw:)
+    def initialize(html:, xhr:, xhr_truncated:, proxy:, raw:, session_changed: false)
       @html = html
       @xhr = xhr
       @xhr_truncated = xhr_truncated
       @proxy = proxy
       @raw = raw
+      @session_changed = session_changed
     end
 
     # True when more responses matched than were returned.
@@ -151,13 +184,14 @@ module ScrapeUnblocker
       @xhr_truncated
     end
 
-    def self.from_hash(payload)
+    def self.from_hash(payload, session_changed: false)
       new(
         html: payload["html"],
         xhr: (payload["xhr"] || []).map { |item| XhrCall.from_hash(item) },
         xhr_truncated: payload["xhr_truncated"] == true,
         proxy: payload["proxy"],
-        raw: payload
+        raw: payload,
+        session_changed: session_changed
       )
     end
   end

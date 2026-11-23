@@ -61,15 +61,24 @@ module ScrapeUnblocker
     # matched elements ({"url", "count", "elements"}) instead of HTML. This method
     # then returns that parsed Hash rather than an HTML String.
     #
+    # +session+ is a sticky session id (1-64 letters, digits, "_", "." or "-"):
+    # calls with the same id leave through the same proxy IP (see the README's
+    # "Sticky sessions"). The String this returns carries no response headers,
+    # so it cannot say whether the session's IP changed; when you need to know,
+    # use a method that returns a result object (#get_page_with_headers,
+    # #get_page_with_cookies, #get_parsed, #get_page_with_xhr) and read its
+    # #session_changed.
+    #
     # When the target page itself answers 404 or 410 this raises
     # ScrapeUnblocker::TargetNotFoundError (billed; the not-found page is on #html).
     def get_page_source(url, proxy_country: nil, time_sleep: nil, method: nil, value: nil, method_timeout: nil,
-                        steps: nil, list_elements: nil)
+                        steps: nil, list_elements: nil, session: nil)
       body = request("/getPageSource",
                      url: url, proxy_country: proxy_country, time_sleep: time_sleep,
                      method: method, value: value, method_timeout: method_timeout,
                      steps: (steps ? JSON.generate(steps) : nil),
-                     list_elements: (list_elements ? true : nil))[:body]
+                     list_elements: (list_elements ? true : nil),
+                     session: session)[:body]
       return JSON.parse(body) if list_elements
 
       body
@@ -86,19 +95,21 @@ module ScrapeUnblocker
     # +main_content_only+ (default true) keeps only the page's main content,
     # without navigation, the site header, footer and sidebars; pass false to
     # convert the whole page. +proxy_country+, +time_sleep+, +method+, +value+,
-    # +method_timeout+ and +steps+ work as in #get_page_source.
+    # +method_timeout+, +steps+ and +session+ work as in #get_page_source (the
+    # returned String cannot say whether the session's IP changed either).
     #
     # When the target page itself answers 404 or 410 this raises
     # ScrapeUnblocker::TargetNotFoundError (billed; the not-found page, as
     # Markdown, is on #html).
     def get_markdown(url, main_content_only: true, proxy_country: nil, time_sleep: nil, method: nil, value: nil,
-                     method_timeout: nil, steps: nil)
+                     method_timeout: nil, steps: nil, session: nil)
       body = request("/getPageSource",
                      url: url, markdown: true,
                      main_content_only: (main_content_only == false ? false : nil),
                      proxy_country: proxy_country, time_sleep: time_sleep,
                      method: method, value: value, method_timeout: method_timeout,
-                     steps: (steps ? JSON.generate(steps) : nil))[:body]
+                     steps: (steps ? JSON.generate(steps) : nil),
+                     session: session)[:body]
       # The API always sends Markdown as UTF-8; Net::HTTP hands the body over
       # as binary, which breaks string operations on non-ASCII text.
       body.dup.force_encoding(Encoding::UTF_8)
@@ -111,21 +122,27 @@ module ScrapeUnblocker
     # (billed like any delivered page). Raises
     # ScrapeUnblocker::TargetNotFoundError (billed, #html nil) when the target
     # page itself answered 404 or 410.
-    def get_parsed(url, proxy_country: nil, time_sleep: nil, refresh_rules: false, rules_hint: nil)
-      body = request("/getPageSource",
-                     url: url, parsed_data: true, proxy_country: proxy_country,
-                     time_sleep: time_sleep,
-                     refresh_rules: (refresh_rules ? true : nil),
-                     rules_hint: rules_hint)[:body]
-      ParsedPage.from_hash(JSON.parse(body))
+    #
+    # +session+ works as in #get_page_source; ParsedPage#session_changed says
+    # whether the session's IP changed on this call.
+    def get_parsed(url, proxy_country: nil, time_sleep: nil, refresh_rules: false, rules_hint: nil, session: nil)
+      response = request("/getPageSource",
+                         url: url, parsed_data: true, proxy_country: proxy_country,
+                         time_sleep: time_sleep,
+                         refresh_rules: (refresh_rules ? true : nil),
+                         rules_hint: rules_hint, session: session)
+      ParsedPage.from_hash(JSON.parse(response[:body]), session_changed: response[:session_changed])
     end
 
     # Fetch a URL and also return the cookies and proxy that served it.
-    def get_page_with_cookies(url, proxy_country: nil, time_sleep: nil)
-      body = request("/getPageSource",
-                     url: url, get_cookies: true, proxy_country: proxy_country,
-                     time_sleep: time_sleep)[:body]
-      PageResult.from_hash(JSON.parse(body))
+    #
+    # +session+ works as in #get_page_source; PageResult#session_changed says
+    # whether the session's IP changed on this call.
+    def get_page_with_cookies(url, proxy_country: nil, time_sleep: nil, session: nil)
+      response = request("/getPageSource",
+                         url: url, get_cookies: true, proxy_country: proxy_country,
+                         time_sleep: time_sleep, session: session)
+      PageResult.from_hash(JSON.parse(response[:body]), session_changed: response[:session_changed])
     end
 
     # Fetch a URL and also return the target's status code, the final URL and
@@ -138,17 +155,19 @@ module ScrapeUnblocker
     # +request_headers+ (the headers sent to the target) and +proxy+ (the
     # exit's lowercase ISO-2 country). Each of them is nil when the render path
     # could not observe it. +get_cookies+ also returns the cookies, as
-    # #get_page_with_cookies does; +cookies+ is nil without it.
+    # #get_page_with_cookies does; +cookies+ is nil without it. +session+
+    # works as in #get_page_source, and +session_changed+ says whether the
+    # session's IP changed on this call.
     #
     # A target page that answers 401, 451 or 5xx is returned, with the target's
     # status on +status_code+. When the target page itself answers 404 or 410
     # this raises ScrapeUnblocker::TargetNotFoundError (billed; the not-found
     # page is on #html and the full JSON, headers included, on #body).
-    def get_page_with_headers(url, get_cookies: false, proxy_country: nil, time_sleep: nil)
-      body = request("/getPageSource",
-                     url: url, get_headers: true, get_cookies: (get_cookies ? true : nil),
-                     proxy_country: proxy_country, time_sleep: time_sleep)[:body]
-      PageWithHeaders.from_hash(JSON.parse(body))
+    def get_page_with_headers(url, get_cookies: false, proxy_country: nil, time_sleep: nil, session: nil)
+      response = request("/getPageSource",
+                         url: url, get_headers: true, get_cookies: (get_cookies ? true : nil),
+                         proxy_country: proxy_country, time_sleep: time_sleep, session: session)
+      PageWithHeaders.from_hash(JSON.parse(response[:body]), session_changed: response[:session_changed])
     end
 
     # Fetch a URL and return the page's own XHR/fetch responses with it.
@@ -160,12 +179,14 @@ module ScrapeUnblocker
     # page received it: up to 20 responses and 10 MB of bodies. +steps+ (same
     # format as #get_page_source) make the page fire the call. Returns a
     # CapturedPage; a failed step raises ScrapeUnblocker::ValidationError whose
-    # body holds the step_failed JSON, including "xhr".
-    def get_page_with_xhr(url, capture_xhr, steps: nil, proxy_country: nil)
-      body = request("/getPageSource",
-                     url: url, capture_xhr: capture_xhr, proxy_country: proxy_country,
-                     steps: (steps ? JSON.generate(steps) : nil))[:body]
-      CapturedPage.from_hash(JSON.parse(body))
+    # body holds the step_failed JSON, including "xhr". +session+ works as in
+    # #get_page_source; CapturedPage#session_changed says whether the session's
+    # IP changed on this call.
+    def get_page_with_xhr(url, capture_xhr, steps: nil, proxy_country: nil, session: nil)
+      response = request("/getPageSource",
+                         url: url, capture_xhr: capture_xhr, proxy_country: proxy_country,
+                         steps: (steps ? JSON.generate(steps) : nil), session: session)
+      CapturedPage.from_hash(JSON.parse(response[:body]), session_changed: response[:session_changed])
     end
 
     # Run a Google search and return the parsed SERP as a Hash: "organic"
@@ -422,9 +443,13 @@ module ScrapeUnblocker
           next
         end
 
-        return { status: status, body: body } if status >= 200 && status < 300
-
         response_headers = (result[:headers] || {}).to_h { |k, v| [k.to_s.downcase, Array(v).join(", ")] }
+        if status >= 200 && status < 300
+          # A sticky session call answered through another IP than the session's.
+          session_changed = response_headers["x-session-changed"].to_s.strip == "true"
+          return { status: status, body: body, session_changed: session_changed }
+        end
+
         raise ScrapeUnblocker.error_for_status(status, body, response_headers)
       end
     end

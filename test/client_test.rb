@@ -703,4 +703,72 @@ class ClientTest < Minitest::Test
     assert_equal ["a=1; Path=/", "b=2"], JSON.parse(err.body)["headers"]["set-cookie"]
     assert_equal 1, @urls.length
   end
+
+  # Every method that calls /getPageSource, with the arguments it needs and a body it can decode.
+  def session_calls
+    page = JSON.generate(HEADERS_PAGE)
+    {
+      get_page_source: [->(c, **o) { c.get_page_source("https://example.com", **o) }, "<html>hi</html>"],
+      list_elements: [->(c, **o) { c.get_page_source("https://example.com", list_elements: true, **o) },
+                      JSON.generate(url: "https://example.com", count: 0, elements: [])],
+      get_markdown: [->(c, **o) { c.get_markdown("https://example.com", **o) }, "# hi"],
+      get_parsed: [->(c, **o) { c.get_parsed("https://example.com", **o) },
+                   JSON.generate(data: { page_type: "product", source: "schema.org", data: {} })],
+      get_page_with_cookies: [->(c, **o) { c.get_page_with_cookies("https://example.com", **o) },
+                              JSON.generate(html: "<html>hi</html>", cookies: [], proxy: "us")],
+      get_page_with_headers: [->(c, **o) { c.get_page_with_headers("https://example.com", **o) }, page],
+      get_page_with_xhr: [->(c, **o) { c.get_page_with_xhr("https://example.com", "/api", **o) },
+                          JSON.generate(html: "<html>hi</html>", xhr: [], proxy: "us")]
+    }
+  end
+
+  def test_session_is_sent_only_when_given
+    session_calls.each do |name, (call, body)|
+      client = make_client([{ status: 200, body: body }, { status: 200, body: body }])
+      call.call(client, session: "cart-42.a_b")
+      call.call(client)
+
+      with = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+      without = URI.decode_www_form(URI.parse(@urls[1]).query).to_h
+      assert_equal "cart-42.a_b", with["session"], "#{name} sends session"
+      refute without.key?("session"), "#{name} omits session when not given"
+    end
+  end
+
+  def test_session_combines_with_other_options
+    client = make_client([{ status: 200, body: "<html>hi</html>" }])
+    client.get_page_source("https://example.com", session: "s1", proxy_country: "DE",
+                                                  steps: [{ action: "wait", value: 500 }])
+    query = URI.decode_www_form(URI.parse(@urls[0]).query).to_h
+    assert_equal "s1", query["session"]
+    assert_equal "DE", query["proxy_country"]
+    assert query.key?("steps")
+  end
+
+  def test_session_changed_comes_from_the_header
+    session_calls.slice(:get_parsed, :get_page_with_cookies, :get_page_with_headers,
+                        :get_page_with_xhr).each do |name, (call, body)|
+      client = make_client([
+                             { status: 200, body: body, headers: { "X-Session-Changed" => "true" } },
+                             { status: 200, body: body },
+                             { status: 200, body: body, headers: { "x-session-changed" => ["false"] } }
+                           ])
+      changed = call.call(client, session: "s1")
+      kept = call.call(client, session: "s1")
+      other = call.call(client, session: "s1")
+
+      assert_equal true, changed.session_changed, "#{name} reads X-Session-Changed: true"
+      assert changed.session_changed?
+      assert_equal false, kept.session_changed, "#{name} is false without the header"
+      refute kept.session_changed?
+      assert_equal false, other.session_changed, "#{name} is false for any value but true"
+    end
+  end
+
+  def test_session_changed_defaults_to_false_on_result_objects
+    refute ScrapeUnblocker::PageResult.from_hash({ "html" => "x" }).session_changed?
+    refute ScrapeUnblocker::ParsedPage.from_hash({ "data" => {} }).session_changed?
+    refute ScrapeUnblocker::PageWithHeaders.from_hash({ "html" => "x" }).session_changed?
+    refute ScrapeUnblocker::CapturedPage.from_hash({ "html" => "x" }).session_changed?
+  end
 end
